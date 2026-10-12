@@ -14,6 +14,9 @@ import { draftRfq } from "@/lib/rfq-ai.functions";
 import { LandedCostCalculator } from "@/components/landed-cost-calculator";
 type RfqDraft = Extract<Awaited<ReturnType<typeof draftRfq>>, { ok: true }>["draft"];
 
+// The AI drafting box needs an AI provider key on the server. It is hidden unless VITE_AI_ENABLED="true" is set.
+const AI_ENABLED = import.meta.env['VITE_AI_ENABLED'] === "true";
+
 export const Route = createFileRoute("/rfq")({
   head: () => ({
     meta: [
@@ -99,6 +102,7 @@ function Rfq() {
         Tell us what you need. One request reaches suppliers across relevant hubs.
       </PageHeader>
       <div className="container-page max-w-2xl py-12">
+        {AI_ENABLED && (
         <div className="mb-8 grid gap-3 rounded-xl border bg-muted/40 p-6 md:p-8">
           <div className="flex items-center gap-2">
             <Wand2 className="h-4 w-4" />
@@ -110,6 +114,7 @@ function Rfq() {
             {drafting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Drafting…</> : <><Wand2 className="mr-2 h-4 w-4" />Draft my RFQ</>}
           </Button>
         </div>
+        )}
         <form key={formKey} onSubmit={onSubmit} noValidate className="grid gap-5 rounded-xl border p-6 md:p-8">
           <div className="grid gap-1.5"><Label htmlFor="product">Product</Label><Input id="product" name="product" defaultValue={draft?.product} placeholder="e.g. Organic cotton t-shirts, 180 gsm" />{err("product")}</div>
           <div className="grid gap-5 sm:grid-cols-2">
