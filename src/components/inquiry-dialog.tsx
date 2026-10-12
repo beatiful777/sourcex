@@ -39,7 +39,7 @@ export function InquiryDialog({ target, trigger }: { target: string; trigger?: R
     setErrors({});
     const v = parsed.data;
     const body = `Name: ${v.name}\nCompany: ${v.company ?? "-"}\nEmail: ${v.email}\nQuantity: ${v.quantity ?? "-"}\n\n${v.message}`;
-    window.location.href = `mailto:hello@sourcex.app?subject=${encodeURIComponent(
+    window.location.href = `mailto:zamick94@gmail.com?subject=${encodeURIComponent(
       `Inquiry: ${target}`,
     )}&body=${encodeURIComponent(body)}`;
     toast.success("Inquiry prepared", { description: "Your email app opened with the inquiry ready to send." });

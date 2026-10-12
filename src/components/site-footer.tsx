@@ -11,7 +11,7 @@ export function SiteFooter() {
             Global B2B sourcing hub. Verified factories, comparable quotes, zero fake profiles.
           </p>
           <p className="text-sm text-muted-foreground">
-            <a className="hover:text-foreground" href="mailto:hello@sourcex.app">hello@sourcex.app</a>
+            <a className="hover:text-foreground" href="mailto:zamick94@gmail.com">zamick94@gmail.com</a>
           </p>
         </div>
         <FooterCol title="For buyers">
@@ -27,7 +27,7 @@ export function SiteFooter() {
         </FooterCol>
         <FooterCol title="Company">
           <Link to="/about">About</Link>
-          <a href="mailto:hello@sourcex.app">Contact</a>
+          <a href="mailto:zamick94@gmail.com">Contact</a>
           <Link to="/sign-in">Sign in</Link>
         </FooterCol>
       </div>

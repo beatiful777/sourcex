@@ -286,7 +286,7 @@ function Dashboard() {
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="rounded-full border px-2 py-0.5">{q.unit_price || "Price on request"}</span>
                         <span className="rounded-full border px-2 py-0.5">{q.lead_time || "Lead time not given"}</span>
-                        <span className="rounded-full border px-2 py-0.5 capitalize">RFQ {q.rfq_status}</span>
+                        <span className="rounded-full border px-2 py-0.5 capitalize">RFQ {q.rfq_status === "in_progress" ? "in progress" : q.rfq_status}</span>
                         {new Date(q.applied_at).toLocaleDateString()}
                       </div>
                     </div>

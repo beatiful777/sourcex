@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Logo } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ function SignIn() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"in" | "up">("in");
   const [busy, setBusy] = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -91,7 +93,13 @@ function SignIn() {
         )}
         <form key={mode} onSubmit={onSubmit} autoComplete="off" className="grid gap-4">
           <div className="grid gap-1.5"><Label htmlFor="email">Work email</Label><Input id="email" name="email" type="email" defaultValue="" autoComplete="off" placeholder="you@company.com" required /></div>
-          <div className="grid gap-1.5"><Label htmlFor="password">Password</Label><Input id="password" name="password" type="password" defaultValue="" autoComplete={mode === "in" ? "current-password" : "new-password"} required minLength={8} /></div>
+          <div className="grid gap-1.5"><Label htmlFor="password">Password</Label><div className="relative">
+              <Input id="password" name="password" type={showPw ? "text" : "password"} defaultValue="" autoComplete={mode === "in" ? "current-password" : "new-password"} required minLength={8} className="pr-10" />
+              <button type="button" onClick={() => setShowPw((v) => !v)} aria-label={showPw ? "Hide password" : "Show password"}
+                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground">
+                {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div></div>
           <Button type="submit" disabled={busy}>{mode === "in" ? "Sign in" : "Create account"}</Button>
         </form>
         <button className="mt-4 w-full text-center text-sm text-primary" onClick={() => setMode(mode === "in" ? "up" : "in")}>

@@ -112,7 +112,7 @@ function About() {
         <div className="mt-10 rounded-xl border bg-subtle p-6">
           <h2 className="font-semibold">Get in touch</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Questions, partnership ideas or press: <a className="text-foreground underline underline-offset-4" href="mailto:hello@sourcex.app">hello@sourcex.app</a>
+            Questions, partnership ideas or press: <a className="text-foreground underline underline-offset-4" href="mailto:zamick94@gmail.com">zamick94@gmail.com</a>
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button asChild size="sm"><Link to="/rfq">Post an RFQ</Link></Button>
