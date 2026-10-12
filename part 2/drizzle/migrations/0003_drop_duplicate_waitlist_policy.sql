@@ -1,0 +1,1 @@
+drop policy if exists "Anyone can join the waitlist" on public.waitlist;
