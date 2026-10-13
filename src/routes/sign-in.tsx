@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Logo } from "@/components/site-header";
@@ -11,6 +11,19 @@ import { supabase } from "@/integrations/supabase/client";
 // Google sign-in works only after the Google provider is configured in Supabase (Authentication -> Providers).
 // Set VITE_ENABLE_GOOGLE="true" on the host to show the button.
 const GOOGLE_ENABLED = import.meta.env['VITE_ENABLE_GOOGLE'] === "true";
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (el: HTMLElement, opts: Record<string, unknown>) => string;
+      reset: (id?: string) => void;
+      remove: (id: string) => void;
+    };
+  }
+}
+
+// Human check (Cloudflare Turnstile). Shown only when VITE_TURNSTILE_SITE_KEY is set, so the page works without it.
+const TURNSTILE_KEY = import.meta.env['VITE_TURNSTILE_SITE_KEY'] as string | undefined;
 
 const COMMON_PASSWORDS = ["password", "12345678", "123456789", "qwerty123", "11111111", "iloveyou", "admin123", "letmein1"];
 
@@ -48,6 +61,41 @@ function SignIn() {
   const [busy, setBusy] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [pw, setPw] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const widgetId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!TURNSTILE_KEY) return;
+    setCaptchaToken("");
+    let cancelled = false;
+    const mount = () => {
+      if (cancelled || !widgetRef.current || !window.turnstile) return;
+      widgetId.current = window.turnstile.render(widgetRef.current, {
+        sitekey: TURNSTILE_KEY,
+        callback: (t: string) => setCaptchaToken(t),
+        "expired-callback": () => setCaptchaToken(""),
+        "error-callback": () => setCaptchaToken(""),
+      });
+    };
+    if (window.turnstile) mount();
+    else {
+      let script = document.querySelector<HTMLScriptElement>("script[data-turnstile]");
+      if (!script) {
+        script = document.createElement("script");
+        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        script.async = true;
+        script.defer = true;
+        script.dataset["turnstile"] = "1";
+        document.head.appendChild(script);
+      }
+      script.addEventListener("load", mount);
+    }
+    return () => {
+      cancelled = true;
+      if (widgetId.current && window.turnstile) window.turnstile.remove(widgetId.current);
+      widgetId.current = null;
+    };
+  }, [mode]);
   useEffect(() => setPw(""), [mode]);
   const strength = passwordStrength(pw);
 
@@ -70,13 +118,16 @@ function SignIn() {
     const f = new FormData(e.currentTarget);
     const email = String(f.get("email")).trim();
     const password = String(f.get("password"));
+    if (TURNSTILE_KEY && !captchaToken) { toast.error("Please complete the human check first"); return; }
+    const captcha = TURNSTILE_KEY ? { captchaToken } : {};
     if (password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
     setBusy(true);
     const { data, error } =
       mode === "in"
-        ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/dashboard` } });
+        ? await supabase.auth.signInWithPassword({ email, password, options: captcha })
+        : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/dashboard`, ...captcha } });
     setBusy(false);
+    if (TURNSTILE_KEY) { window.turnstile?.reset(widgetId.current ?? undefined); setCaptchaToken(""); } // tokens are single-use
     if (error) { toast.error(error.message); return; }
     // With "Confirm email" switched off in Supabase, signUp returns a session right away.
     if (mode === "up" && !(data && "session" in data && data.session)) { toast.success("Check your email", { description: "Confirm your address to finish signing up." }); return; }
@@ -132,6 +183,7 @@ function SignIn() {
               </div>
             )}
           </div>
+          {TURNSTILE_KEY && <div ref={widgetRef} className="min-h-[65px]" />}
           <Button type="submit" disabled={busy}>{mode === "in" ? "Sign in" : "Create account"}</Button>
         </form>
         <button className="mt-4 w-full text-center text-sm text-primary" onClick={() => setMode(mode === "in" ? "up" : "in")}>
