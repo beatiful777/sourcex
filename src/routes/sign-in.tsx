@@ -12,6 +12,22 @@ import { supabase } from "@/integrations/supabase/client";
 // Set VITE_ENABLE_GOOGLE="true" on the host to show the button.
 const GOOGLE_ENABLED = import.meta.env['VITE_ENABLE_GOOGLE'] === "true";
 
+const COMMON_PASSWORDS = ["password", "12345678", "123456789", "qwerty123", "11111111", "iloveyou", "admin123", "letmein1"];
+
+/** 1 = weak (red), 2 = medium (yellow), 3 = strong (green). 0 = nothing typed yet. */
+function passwordStrength(p: string): { level: 0 | 1 | 2 | 3; label: string } {
+  if (!p) return { level: 0, label: "" };
+  if (p.length < 8 || COMMON_PASSWORDS.includes(p.toLowerCase())) return { level: 1, label: "Weak" };
+  let score = 1;
+  if (p.length >= 12) score++;
+  if (/[a-z]/.test(p) && /[A-Z]/.test(p)) score++;
+  if (/\d/.test(p)) score++;
+  if (/[^A-Za-z0-9]/.test(p)) score++;
+  if (score <= 2) return { level: 1, label: "Weak" };
+  if (score === 3) return { level: 2, label: "Medium" };
+  return { level: 3, label: "Strong" };
+}
+
 export const Route = createFileRoute("/sign-in")({
   head: () => ({
     meta: [
@@ -31,6 +47,9 @@ function SignIn() {
   const [mode, setMode] = useState<"in" | "up">("in");
   const [busy, setBusy] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const [pw, setPw] = useState("");
+  useEffect(() => setPw(""), [mode]);
+  const strength = passwordStrength(pw);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -94,12 +113,25 @@ function SignIn() {
         <form key={mode} onSubmit={onSubmit} autoComplete="off" className="grid gap-4">
           <div className="grid gap-1.5"><Label htmlFor="email">Work email</Label><Input id="email" name="email" type="email" defaultValue="" autoComplete="off" placeholder="you@company.com" required /></div>
           <div className="grid gap-1.5"><Label htmlFor="password">Password</Label><div className="relative">
-              <Input id="password" name="password" type={showPw ? "text" : "password"} defaultValue="" autoComplete={mode === "in" ? "current-password" : "new-password"} required minLength={8} className="pr-10" />
+              <Input id="password" name="password" type={showPw ? "text" : "password"} defaultValue="" autoComplete={mode === "in" ? "current-password" : "new-password"} required minLength={8} onChange={(e) => setPw(e.target.value)} className="pr-10" />
               <button type="button" onClick={() => setShowPw((v) => !v)} aria-label={showPw ? "Hide password" : "Show password"}
                 className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground">
                 {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
-            </div></div>
+            </div>
+            {mode === "up" && strength.level > 0 && (
+              <div className="grid gap-1" aria-live="polite">
+                <div className="flex gap-1">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= strength.level ? (strength.level === 1 ? "bg-red-500" : strength.level === 2 ? "bg-yellow-500" : "bg-green-500") : "bg-muted"}`} />
+                  ))}
+                </div>
+                <p className={`text-xs ${strength.level === 1 ? "text-red-600" : strength.level === 2 ? "text-yellow-600" : "text-green-600"}`}>
+                  {strength.label}{strength.level === 1 ? ": use 8+ characters, mix letters and numbers" : ""}
+                </p>
+              </div>
+            )}
+          </div>
           <Button type="submit" disabled={busy}>{mode === "in" ? "Sign in" : "Create account"}</Button>
         </form>
         <button className="mt-4 w-full text-center text-sm text-primary" onClick={() => setMode(mode === "in" ? "up" : "in")}>
