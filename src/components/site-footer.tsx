@@ -22,6 +22,8 @@ export function SiteFooter() {
         <FooterCol title="Company">
           <Link to="/about">About</Link>
           <Link to="/contact">Contact</Link>
+          <Link to="/terms">Terms</Link>
+          <Link to="/privacy">Privacy</Link>
           <Link to="/sign-in">Sign in</Link>
         </FooterCol>
       </div>

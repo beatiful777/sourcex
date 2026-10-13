@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
@@ -12,34 +12,86 @@ import { supabase } from "@/integrations/supabase/client";
 // Set VITE_ENABLE_GOOGLE="true" on the host to show the button.
 const GOOGLE_ENABLED = import.meta.env['VITE_ENABLE_GOOGLE'] === "true";
 
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (el: HTMLElement, opts: Record<string, unknown>) => string;
-      reset: (id?: string) => void;
-      remove: (id: string) => void;
-    };
-  }
-}
 
-// Human check (Cloudflare Turnstile). Shown only when VITE_TURNSTILE_SITE_KEY is set, so the page works without it.
+// Cloudflare Turnstile (CAPTCHA). Shown only when VITE_TURNSTILE_SITE_KEY is set.
 const TURNSTILE_KEY = import.meta.env['VITE_TURNSTILE_SITE_KEY'] as string | undefined;
 
-const COMMON_PASSWORDS = ["password", "12345678", "123456789", "qwerty123", "11111111", "iloveyou", "admin123", "letmein1"];
-
-/** 1 = weak (red), 2 = medium (yellow), 3 = strong (green). 0 = nothing typed yet. */
-function passwordStrength(p: string): { level: 0 | 1 | 2 | 3; label: string } {
-  if (!p) return { level: 0, label: "" };
-  if (p.length < 8 || COMMON_PASSWORDS.includes(p.toLowerCase())) return { level: 1, label: "Weak" };
-  let score = 1;
-  if (p.length >= 12) score++;
-  if (/[a-z]/.test(p) && /[A-Z]/.test(p)) score++;
-  if (/\d/.test(p)) score++;
-  if (/[^A-Za-z0-9]/.test(p)) score++;
-  if (score <= 2) return { level: 1, label: "Weak" };
-  if (score === 3) return { level: 2, label: "Medium" };
-  return { level: 3, label: "Strong" };
+type TurnstileApi = {
+  render: (el: HTMLElement, opts: Record<string, unknown>) => string;
+  reset: (id?: string) => void;
+  remove: (id?: string) => void;
+};
+function getTurnstile(): TurnstileApi | undefined {
+  return (window as unknown as { turnstile?: TurnstileApi }).turnstile;
 }
+
+function TurnstileBox({ onToken, resetKey }: { onToken: (t: string | null) => void; resetKey: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const idRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    function mount() {
+      const ts = getTurnstile();
+      if (cancelled || !ts || !ref.current || idRef.current) return;
+      idRef.current = ts.render(ref.current, {
+        sitekey: TURNSTILE_KEY,
+        callback: (t: string) => onToken(t),
+        "expired-callback": () => onToken(null),
+        "error-callback": () => onToken(null),
+      });
+    }
+    if (getTurnstile()) mount();
+    else {
+      let s = document.getElementById("cf-turnstile-script") as HTMLScriptElement | null;
+      if (!s) {
+        s = document.createElement("script");
+        s.id = "cf-turnstile-script";
+        s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        s.async = true;
+        document.head.appendChild(s);
+      }
+      s.addEventListener("load", mount);
+    }
+    return () => {
+      cancelled = true;
+      const ts = getTurnstile();
+      if (ts && idRef.current) ts.remove(idRef.current);
+      idRef.current = undefined;
+      onToken(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (resetKey === 0) return;
+    const ts = getTurnstile();
+    if (ts && idRef.current) ts.reset(idRef.current);
+    onToken(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetKey]);
+
+  return <div ref={ref} className="flex justify-center" />;
+}
+
+// Password strength: 0 (empty) .. 3 (strong)
+function passwordStrength(pw: string): 0 | 1 | 2 | 3 {
+  if (!pw) return 0;
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  if (pw.length < 8) return 1;
+  return score >= 5 ? 3 : score >= 3 ? 2 : 1;
+}
+const STRENGTH = [
+  null,
+  { label: "Weak", bar: "bg-red-500", text: "text-red-500", width: "33%" },
+  { label: "Medium", bar: "bg-yellow-500", text: "text-yellow-500", width: "66%" },
+  { label: "Strong", bar: "bg-green-500", text: "text-green-500", width: "100%" },
+] as const;
 
 export const Route = createFileRoute("/sign-in")({
   head: () => ({
@@ -61,43 +113,8 @@ function SignIn() {
   const [busy, setBusy] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [pw, setPw] = useState("");
-  const [captchaToken, setCaptchaToken] = useState("");
-  const widgetRef = useRef<HTMLDivElement>(null);
-  const widgetId = useRef<string | null>(null);
-  useEffect(() => {
-    if (!TURNSTILE_KEY) return;
-    setCaptchaToken("");
-    let cancelled = false;
-    const mount = () => {
-      if (cancelled || !widgetRef.current || !window.turnstile) return;
-      widgetId.current = window.turnstile.render(widgetRef.current, {
-        sitekey: TURNSTILE_KEY,
-        callback: (t: string) => setCaptchaToken(t),
-        "expired-callback": () => setCaptchaToken(""),
-        "error-callback": () => setCaptchaToken(""),
-      });
-    };
-    if (window.turnstile) mount();
-    else {
-      let script = document.querySelector<HTMLScriptElement>("script[data-turnstile]");
-      if (!script) {
-        script = document.createElement("script");
-        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-        script.async = true;
-        script.defer = true;
-        script.dataset["turnstile"] = "1";
-        document.head.appendChild(script);
-      }
-      script.addEventListener("load", mount);
-    }
-    return () => {
-      cancelled = true;
-      if (widgetId.current && window.turnstile) window.turnstile.remove(widgetId.current);
-      widgetId.current = null;
-    };
-  }, [mode]);
-  useEffect(() => setPw(""), [mode]);
-  const strength = passwordStrength(pw);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -118,16 +135,17 @@ function SignIn() {
     const f = new FormData(e.currentTarget);
     const email = String(f.get("email")).trim();
     const password = String(f.get("password"));
-    if (TURNSTILE_KEY && !captchaToken) { toast.error("Please complete the human check first"); return; }
-    const captcha = TURNSTILE_KEY ? { captchaToken } : {};
     if (password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
+    if (TURNSTILE_KEY && !captchaToken) { toast.error("Please complete the CAPTCHA check"); return; }
+    const captcha = captchaToken ? { captchaToken } : {};
     setBusy(true);
     const { data, error } =
       mode === "in"
-        ? await supabase.auth.signInWithPassword({ email, password, options: captcha })
-        : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/dashboard`, ...captcha } });
+        ? await supabase.auth.signInWithPassword({ email, password, options: { ...captcha } })
+        : await supabase.auth.signUp({ email, password, options: { ...captcha, emailRedirectTo: `${window.location.origin}/dashboard` } });
     setBusy(false);
-    if (TURNSTILE_KEY) { window.turnstile?.reset(widgetId.current ?? undefined); setCaptchaToken(""); } // tokens are single-use
+    // A CAPTCHA token can be used only once
+    if (TURNSTILE_KEY) setCaptchaReset((n) => n + 1);
     if (error) { toast.error(error.message); return; }
     // With "Confirm email" switched off in Supabase, signUp returns a session right away.
     if (mode === "up" && !(data && "session" in data && data.session)) { toast.success("Check your email", { description: "Confirm your address to finish signing up." }); return; }
@@ -145,7 +163,7 @@ function SignIn() {
         <div className="flex justify-center"><Logo /></div>
         <div className="mt-6 grid grid-cols-2 rounded-lg border p-1 text-sm">
           {(["in", "up"] as const).map((m) => (
-            <button key={m} type="button" onClick={() => setMode(m)}
+            <button key={m} type="button" onClick={() => { setMode(m); setPw(""); }}
               className={`rounded-md py-1.5 font-medium transition-colors ${mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
               {m === "in" ? "Login" : "Register"}
             </button>
@@ -170,23 +188,27 @@ function SignIn() {
                 {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            {mode === "up" && strength.level > 0 && (
-              <div className="grid gap-1" aria-live="polite">
-                <div className="flex gap-1">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= strength.level ? (strength.level === 1 ? "bg-red-500" : strength.level === 2 ? "bg-yellow-500" : "bg-green-500") : "bg-muted"}`} />
-                  ))}
+            {mode === "up" && pw && STRENGTH[passwordStrength(pw)] && (
+              <div className="grid gap-1">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div className={`h-full transition-all ${STRENGTH[passwordStrength(pw)]!.bar}`} style={{ width: STRENGTH[passwordStrength(pw)]!.width }} />
                 </div>
-                <p className={`text-xs ${strength.level === 1 ? "text-red-600" : strength.level === 2 ? "text-yellow-600" : "text-green-600"}`}>
-                  {strength.label}{strength.level === 1 ? ": use 8+ characters, mix letters and numbers" : ""}
+                <p className={`text-xs ${STRENGTH[passwordStrength(pw)]!.text}`}>
+                  {STRENGTH[passwordStrength(pw)]!.label}
+                  {passwordStrength(pw) < 3 ? " — use 12+ characters, upper & lower case, digits and symbols" : ""}
                 </p>
               </div>
             )}
           </div>
-          {TURNSTILE_KEY && <div ref={widgetRef} className="min-h-[65px]" />}
-          <Button type="submit" disabled={busy}>{mode === "in" ? "Sign in" : "Create account"}</Button>
+          {TURNSTILE_KEY && <TurnstileBox onToken={setCaptchaToken} resetKey={captchaReset} />}
+          <Button type="submit" disabled={busy || (!!TURNSTILE_KEY && !captchaToken)}>{mode === "in" ? "Sign in" : "Create account"}</Button>
         </form>
-        <button className="mt-4 w-full text-center text-sm text-primary" onClick={() => setMode(mode === "in" ? "up" : "in")}>
+        {mode === "up" && (
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            By creating an account you agree to our <Link to="/terms" className="underline">Terms</Link> and <Link to="/privacy" className="underline">Privacy Policy</Link>.
+          </p>
+        )}
+        <button className="mt-4 w-full text-center text-sm text-primary" onClick={() => { setMode(mode === "in" ? "up" : "in"); setPw(""); }}>
           {mode === "in" ? "New here? Create an account" : "Have an account? Sign in"}
         </button>
       </div>

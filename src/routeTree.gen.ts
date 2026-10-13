@@ -16,9 +16,11 @@ import { Route as BecomeASupplierRouteImport } from './routes/become-a-supplier'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as HubsRouteImport } from './routes/hubs'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RfqRouteImport } from './routes/rfq'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedOpenRfqsRouteImport } from './routes/_authenticated/open-rfqs'
@@ -61,6 +63,11 @@ const HubsRoute = HubsRouteImport.update({
   path: '/hubs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RfqRoute = RfqRouteImport.update({
   id: '/rfq',
   path: '/rfq',
@@ -74,6 +81,11 @@ const SignInRoute = SignInRouteImport.update({
 const SuppliersRoute = SuppliersRouteImport.update({
   id: '/suppliers',
   path: '/suppliers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -121,9 +133,11 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/how-it-works': typeof HowItWorksRoute
   '/hubs': typeof HubsRoute
+  '/privacy': typeof PrivacyRoute
   '/rfq': typeof RfqRoute
   '/sign-in': typeof SignInRoute
   '/suppliers': typeof SuppliersRoute
+  '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/open-rfqs': typeof AuthenticatedOpenRfqsRoute
@@ -139,9 +153,11 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/how-it-works': typeof HowItWorksRoute
   '/hubs': typeof HubsRoute
+  '/privacy': typeof PrivacyRoute
   '/rfq': typeof RfqRoute
   '/sign-in': typeof SignInRoute
   '/suppliers': typeof SuppliersRoute
+  '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/open-rfqs': typeof AuthenticatedOpenRfqsRoute
@@ -159,9 +175,11 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/how-it-works': typeof HowItWorksRoute
   '/hubs': typeof HubsRoute
+  '/privacy': typeof PrivacyRoute
   '/rfq': typeof RfqRoute
   '/sign-in': typeof SignInRoute
   '/suppliers': typeof SuppliersRoute
+  '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/open-rfqs': typeof AuthenticatedOpenRfqsRoute
@@ -179,9 +197,11 @@ export interface FileRouteTypes {
     | '/contact'
     | '/how-it-works'
     | '/hubs'
+    | '/privacy'
     | '/rfq'
     | '/sign-in'
     | '/suppliers'
+    | '/terms'
     | '/admin'
     | '/dashboard'
     | '/open-rfqs'
@@ -197,9 +217,11 @@ export interface FileRouteTypes {
     | '/contact'
     | '/how-it-works'
     | '/hubs'
+    | '/privacy'
     | '/rfq'
     | '/sign-in'
     | '/suppliers'
+    | '/terms'
     | '/admin'
     | '/dashboard'
     | '/open-rfqs'
@@ -216,9 +238,11 @@ export interface FileRouteTypes {
     | '/contact'
     | '/how-it-works'
     | '/hubs'
+    | '/privacy'
     | '/rfq'
     | '/sign-in'
     | '/suppliers'
+    | '/terms'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/open-rfqs'
@@ -236,9 +260,11 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   HowItWorksRoute: typeof HowItWorksRoute
   HubsRoute: typeof HubsRoute
+  PrivacyRoute: typeof PrivacyRoute
   RfqRoute: typeof RfqRoute
   SignInRoute: typeof SignInRoute
   SuppliersRoute: typeof SuppliersRoute
+  TermsRoute: typeof TermsRoute
   HubCountryRoute: typeof HubCountryRoute
 }
 
@@ -293,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HubsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rfq': {
       id: '/rfq'
       path: '/rfq'
@@ -312,6 +345,13 @@ declare module '@tanstack/react-router' {
       path: '/suppliers'
       fullPath: '/suppliers'
       preLoaderRoute: typeof SuppliersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -395,9 +435,11 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   HowItWorksRoute: HowItWorksRoute,
   HubsRoute: HubsRoute,
+  PrivacyRoute: PrivacyRoute,
   RfqRoute: RfqRoute,
   SignInRoute: SignInRoute,
   SuppliersRoute: SuppliersRoute,
+  TermsRoute: TermsRoute,
   HubCountryRoute: HubCountryRoute,
 }
 export const routeTree = rootRouteImport
