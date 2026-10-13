@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FactorySamples } from "@/components/sample-lists";
 import { submitQuoteFn } from "@/lib/notifications.functions";
+import { RfqFiles } from "@/components/rfq-files";
 
 export const Route = createFileRoute("/_authenticated/supplier/rfqs")({
   head: () => ({
@@ -84,6 +85,7 @@ function Desk() {
                       <p className="font-medium">{r.product}</p>
                       <p className="text-xs text-muted-foreground">{r.category} · {r.country || "Any country"} · {r.quantity} · {new Date(r.created_at).toLocaleDateString()}</p>
                       {r.details && <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">{r.details}</p>}
+                      <RfqFiles rfqId={r.id} />
                       {r.quote_id && (
                         <p className="mt-2 text-xs">Your quote: {r.unit_price || "—"} · {r.lead_time || "—"} · MOQ {r.min_order || "—"} · <b>{r.quote_status}</b></p>
                       )}
