@@ -200,6 +200,7 @@ function SignIn() {
               </div>
             )}
           </div>
+          {mode === "in" && <Link to="/reset-password" className="-mt-2 text-right text-xs text-primary">Forgot password?</Link>}
           {TURNSTILE_KEY && <TurnstileBox onToken={setCaptchaToken} resetKey={captchaReset} />}
           <Button type="submit" disabled={busy || (!!TURNSTILE_KEY && !captchaToken)}>{mode === "in" ? "Sign in" : "Create account"}</Button>
         </form>

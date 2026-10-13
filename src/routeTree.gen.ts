@@ -17,6 +17,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as HubsRouteImport } from './routes/hubs'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RfqRouteImport } from './routes/rfq'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
@@ -66,6 +67,11 @@ const HubsRoute = HubsRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RfqRoute = RfqRouteImport.update({
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/how-it-works': typeof HowItWorksRoute
   '/hubs': typeof HubsRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rfq': typeof RfqRoute
   '/sign-in': typeof SignInRoute
   '/suppliers': typeof SuppliersRoute
@@ -154,6 +161,7 @@ export interface FileRoutesByTo {
   '/how-it-works': typeof HowItWorksRoute
   '/hubs': typeof HubsRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rfq': typeof RfqRoute
   '/sign-in': typeof SignInRoute
   '/suppliers': typeof SuppliersRoute
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/how-it-works': typeof HowItWorksRoute
   '/hubs': typeof HubsRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/rfq': typeof RfqRoute
   '/sign-in': typeof SignInRoute
   '/suppliers': typeof SuppliersRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/hubs'
     | '/privacy'
+    | '/reset-password'
     | '/rfq'
     | '/sign-in'
     | '/suppliers'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/hubs'
     | '/privacy'
+    | '/reset-password'
     | '/rfq'
     | '/sign-in'
     | '/suppliers'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/hubs'
     | '/privacy'
+    | '/reset-password'
     | '/rfq'
     | '/sign-in'
     | '/suppliers'
@@ -261,6 +273,7 @@ export interface RootRouteChildren {
   HowItWorksRoute: typeof HowItWorksRoute
   HubsRoute: typeof HubsRoute
   PrivacyRoute: typeof PrivacyRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   RfqRoute: typeof RfqRoute
   SignInRoute: typeof SignInRoute
   SuppliersRoute: typeof SuppliersRoute
@@ -324,6 +337,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rfq': {
@@ -436,6 +456,7 @@ const rootRouteChildren: RootRouteChildren = {
   HowItWorksRoute: HowItWorksRoute,
   HubsRoute: HubsRoute,
   PrivacyRoute: PrivacyRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   RfqRoute: RfqRoute,
   SignInRoute: SignInRoute,
   SuppliersRoute: SuppliersRoute,

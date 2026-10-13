@@ -1,0 +1,90 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Logo } from "@/components/site-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+
+export const Route = createFileRoute("/reset-password")({
+  head: () => ({
+    meta: [
+      { title: "Reset password — SOURCEX" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: ResetPassword,
+});
+
+function ResetPassword() {
+  const navigate = useNavigate();
+  const [recovery, setRecovery] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    if (/type=recovery/.test(window.location.hash)) setRecovery(true);
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") setRecovery(true);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  async function requestLink(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const email = String(new FormData(e.currentTarget).get("email")).trim();
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    setSent(true);
+  }
+
+  async function setNewPassword(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const password = String(f.get("password"));
+    if (password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
+    if (password !== String(f.get("confirm"))) { toast.error("Passwords do not match"); return; }
+    setBusy(true);
+    const { error } = await supabase.auth.updateUser({ password });
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Password updated");
+    navigate({ to: "/dashboard" });
+  }
+
+  return (
+    <div className="container-page flex min-h-[70vh] items-center justify-center py-16">
+      <div className="w-full max-w-sm rounded-xl border p-8">
+        <div className="flex justify-center"><Logo /></div>
+        {recovery ? (
+          <>
+            <h1 className="mt-6 text-center text-xl font-semibold">Choose a new password</h1>
+            <form onSubmit={setNewPassword} autoComplete="off" className="mt-6 grid gap-4">
+              <div className="grid gap-1.5"><Label htmlFor="password">New password</Label><Input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} /></div>
+              <div className="grid gap-1.5"><Label htmlFor="confirm">Repeat password</Label><Input id="confirm" name="confirm" type="password" autoComplete="new-password" required minLength={8} /></div>
+              <Button type="submit" disabled={busy}>Save password</Button>
+            </form>
+          </>
+        ) : sent ? (
+          <>
+            <h1 className="mt-6 text-center text-xl font-semibold">Check your email</h1>
+            <p className="mt-2 text-center text-sm text-muted-foreground">If an account exists for this address, a reset link is on its way. The link opens this page.</p>
+          </>
+        ) : (
+          <>
+            <h1 className="mt-6 text-center text-xl font-semibold">Forgot your password?</h1>
+            <p className="mt-1 text-center text-sm text-muted-foreground">Enter your email and we will send you a reset link.</p>
+            <form onSubmit={requestLink} className="mt-6 grid gap-4">
+              <div className="grid gap-1.5"><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" placeholder="you@company.com" required /></div>
+              <Button type="submit" disabled={busy}>Send reset link</Button>
+            </form>
+          </>
+        )}
+        <Link to="/sign-in" className="mt-4 block text-center text-sm text-primary">Back to sign in</Link>
+      </div>
+    </div>
+  );
+}
