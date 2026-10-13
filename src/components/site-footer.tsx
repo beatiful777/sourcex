@@ -7,12 +7,6 @@ export function SiteFooter() {
       <div className="container-page grid gap-10 py-14 md:grid-cols-4">
         <div className="space-y-3">
           <Logo />
-          <p className="text-sm text-muted-foreground">
-            Global B2B sourcing hub. Verified factories, comparable quotes, zero fake profiles.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            <a className="hover:text-foreground" href="mailto:zamick94@gmail.com">zamick94@gmail.com</a>
-          </p>
         </div>
         <FooterCol title="For buyers">
           <Link to="/rfq">Post an RFQ</Link>
@@ -27,15 +21,9 @@ export function SiteFooter() {
         </FooterCol>
         <FooterCol title="Company">
           <Link to="/about">About</Link>
-          <a href="mailto:zamick94@gmail.com">Contact</a>
+          <Link to="/contact">Contact</Link>
           <Link to="/sign-in">Sign in</Link>
         </FooterCol>
-      </div>
-      <div className="border-t">
-        <div className="container-page flex flex-col justify-between gap-2 py-5 text-xs text-muted-foreground sm:flex-row">
-          <span>© {new Date().getFullYear()} SOURCEX. Verified suppliers only.</span>
-          <span>No supplier listings are shown until they are verified.</span>
-        </div>
       </div>
     </footer>
   );

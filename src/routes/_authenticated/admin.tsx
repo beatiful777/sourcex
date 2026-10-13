@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/blocks";
 import { Button } from "@/components/ui/button";
 import { decideApplicationFn } from "@/lib/notifications.functions";
+import { AdminMessages } from "@/components/admin-messages";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -175,6 +176,7 @@ function AdminSuppliers() {
             ))}
           </div>
         )}
+        <AdminMessages />
       </div>
     </>
   );

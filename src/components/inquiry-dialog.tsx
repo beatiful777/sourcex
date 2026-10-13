@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +27,7 @@ export function InquiryDialog({ target, trigger }: { target: string; trigger?: R
   const [open, setOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget));
     const parsed = schema.safeParse(data);
@@ -38,11 +39,15 @@ export function InquiryDialog({ target, trigger }: { target: string; trigger?: R
     }
     setErrors({});
     const v = parsed.data;
-    const body = `Name: ${v.name}\nCompany: ${v.company ?? "-"}\nEmail: ${v.email}\nQuantity: ${v.quantity ?? "-"}\n\n${v.message}`;
-    window.location.href = `mailto:zamick94@gmail.com?subject=${encodeURIComponent(
-      `Inquiry: ${target}`,
-    )}&body=${encodeURIComponent(body)}`;
-    toast.success("Inquiry prepared", { description: "Your email app opened with the inquiry ready to send." });
+    const body = `Inquiry: ${target}\nCompany: ${v.company ?? "-"}\nQuantity: ${v.quantity ?? "-"}\n\n${v.message}`;
+    const { error } = await supabase
+      .from("contact_messages")
+      .insert({ name: v.name, email: v.email, message: body });
+    if (error) {
+      toast.error("Couldn't send your inquiry", { description: "Please try again in a moment." });
+      return;
+    }
+    toast.success("Inquiry sent", { description: "We received your message and will reply by email." });
     setOpen(false);
   }
 
