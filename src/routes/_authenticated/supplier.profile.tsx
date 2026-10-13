@@ -16,7 +16,8 @@ export const Route = createFileRoute("/_authenticated/supplier/profile")({
   component: Profile,
 });
 
-type P = { id: string; company_name: string; country: string | null; categories: string[]; factory_details: string | null; min_order_quantity: string | null; certifications: string[]; website_or_catalog: string | null; status: string };
+type P = { id: string; company_name: string; country: string | null; categories: string[]; factory_details: string | null; min_order_quantity: string | null; certifications: string[]; website_or_catalog: string | null; status: string; logo_url: string | null };
+
 const norm = (xs: string[]) => [...new Set(xs.map((x) => x.trim()).filter(Boolean))].sort().join("|");
 
 function Profile() {
@@ -27,8 +28,13 @@ function Profile() {
   });
   const [f, setF] = useState({ company_name: "", country: "", categories: [] as string[], factory_details: "", min_order_quantity: "", certifications: "", website: "" });
   const [busy, setBusy] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoBusy, setLogoBusy] = useState(false);
   useEffect(() => {
-    if (data) setF({ company_name: data.company_name, country: data.country ?? "", categories: data.categories ?? [], factory_details: data.factory_details ?? "", min_order_quantity: data.min_order_quantity ?? "", certifications: (data.certifications ?? []).join(", "), website: data.website_or_catalog ?? "" });
+    if (data) {
+      setF({ company_name: data.company_name, country: data.country ?? "", categories: data.categories ?? [], factory_details: data.factory_details ?? "", min_order_quantity: data.min_order_quantity ?? "", certifications: (data.certifications ?? []).join(", "), website: data.website_or_catalog ?? "" });
+      setLogoUrl(data.logo_url ?? null);
+    }
   }, [data]);
 
   if (isLoading) return <div className="container-page py-12 text-sm text-muted-foreground">Loading…</div>;
@@ -43,6 +49,35 @@ function Profile() {
   const locked = p.status === "rejected";
   const keyChanged = f.company_name.trim().toLowerCase() !== p.company_name.trim().toLowerCase() || f.country !== (p.country ?? "") || norm(f.categories) !== norm(p.categories ?? []);
   const reReview = keyChanged && p.status === "approved";
+
+  async function onLogoPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp", "image/svg+xml"].includes(file.type)) {
+      toast.error("Logo must be PNG, JPG, WEBP or SVG");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Logo must be under 2 MB");
+      e.target.value = "";
+      return;
+    }
+    setLogoBusy(true);
+    const safe = file.name.replace(/[^\w.\-]+/g, "_");
+    const path = `${p.id}/${Date.now()}-${safe}`;
+    const { error: up } = await supabase.storage.from("logos").upload(path, file, { contentType: file.type });
+    if (up) { setLogoBusy(false); toast.error("Upload failed", { description: up.message }); e.target.value = ""; return; }
+    const publicUrl = supabase.storage.from("logos").getPublicUrl(path).data.publicUrl;
+    const { error: dbErr } = await supabase.rpc("update_factory_logo", { _id: p.id, _logo_url: publicUrl });
+    setLogoBusy(false);
+    e.target.value = "";
+    if (dbErr) { toast.error("Couldn't save logo", { description: dbErr.message }); return; }
+    setLogoUrl(publicUrl);
+    toast.success("Logo updated");
+    qc.invalidateQueries({ queryKey: ["my-factory-profile"] });
+    qc.invalidateQueries({ queryKey: ["my-approved-supplier"] });
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -67,6 +102,25 @@ function Profile() {
         {p.status === "approved" ? "Description, minimum order, certifications and website update immediately. Name, country and categories need a new review." : p.status === "pending" ? "Your profile is waiting for review. You can keep editing it." : "This application was rejected and can't be edited."}
       </PageHeader>
       <form onSubmit={save} className="container-page grid max-w-2xl gap-5 py-12">
+        <div className="grid gap-2 rounded-xl border p-5 sm:flex sm:items-center sm:gap-5">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted text-xs text-muted-foreground">
+            {logoUrl ? <img src={logoUrl} alt={`${p.company_name} logo`} className="h-full w-full object-contain" /> : "No logo"}
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="fp-logo">Factory logo</Label>
+            <input
+              id="fp-logo"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              disabled={locked || logoBusy}
+              onChange={onLogoPick}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:text-primary-foreground disabled:opacity-50"
+            />
+            <p className="text-xs text-muted-foreground">
+              PNG, JPG, WEBP or SVG, up to 2 MB. Shows up in your profile immediately.
+            </p>
+          </div>
+        </div>
         <fieldset disabled={locked || busy} className="grid gap-5">
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="grid gap-1.5"><Label htmlFor="fp-name">Company name</Label><Input id="fp-name" value={f.company_name} maxLength={120} onChange={(e) => setF({ ...f, company_name: e.target.value })} /></div>
