@@ -1,5 +1,6 @@
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
+import { NotificationBell } from "@/components/notification-bell";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -73,6 +74,7 @@ export function SiteHeader() {
             ))}
           </nav>
         </div>
+        <div className="flex items-center gap-1">
         <div className="hidden items-center gap-2 md:flex">
           {signedIn ? (
             <>
@@ -97,6 +99,7 @@ export function SiteHeader() {
             <Link to="/rfq">Post RFQ</Link>
           </Button>
         </div>
+        {signedIn && <NotificationBell />}
         <button
           className="md:hidden"
           aria-label={open ? "Close menu" : "Open menu"}
@@ -104,6 +107,7 @@ export function SiteHeader() {
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
+        </div>
       </div>
       {open && (
         <div className="border-t md:hidden">
