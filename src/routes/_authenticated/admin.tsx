@@ -59,10 +59,8 @@ function AdminSuppliers() {
     queryKey: ["supplier-applications"],
     enabled: !!isAdmin,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("supplier_applications")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // Contact columns are not readable through the public API, so staff read applications via a protected function.
+      const { data, error } = await supabase.rpc("admin_list_applications");
       if (error) throw error;
       return data as Application[];
     },

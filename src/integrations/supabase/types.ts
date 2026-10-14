@@ -291,6 +291,10 @@ export type Database = {
         Returns: { created_at: string; id: string; message: string; product: string; quantity: number; status: string; supplier_note: string }[]
       }
       accept_quote: { Args: { _accepted: boolean; _quote: string }; Returns: undefined }
+      admin_list_applications: {
+        Args: never
+        Returns: Database["public"]["Tables"]["supplier_applications"]["Row"][]
+      }
       public_platform_stats: {
         Args: never
         Returns: { accepted_deals: number; countries: number; open_rfqs: number; quotes: number; suppliers: number }[]
