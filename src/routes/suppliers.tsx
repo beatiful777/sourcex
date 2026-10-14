@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { Search, ShieldCheck } from "lucide-react";
@@ -40,6 +40,7 @@ type Factory = {
   min_order_quantity: string | null;
   certifications: string[];
   website_or_catalog: string | null;
+  logo_url: string | null;
 };
 
 export function Suppliers() {
@@ -53,7 +54,7 @@ export function Suppliers() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("supplier_applications")
-        .select("id, company_name, country, city, categories, min_order_quantity, certifications, website_or_catalog")
+        .select("id, company_name, country, city, categories, min_order_quantity, certifications, website_or_catalog, logo_url")
         .eq("status", "approved")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -125,7 +126,12 @@ export function Suppliers() {
                   {results.map((s) => (
                     <div key={s.id} className="flex flex-col rounded-xl border p-5">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="font-medium">{s.company_name}</div>
+                        <div className="flex min-w-0 items-center gap-3">
+                          {s.logo_url && s.logo_url.startsWith("https://") && (
+                            <img src={s.logo_url} alt={`${s.company_name} logo`} className="h-10 w-10 shrink-0 rounded-md border object-contain" />
+                          )}
+                          <Link to="/factory/$id" params={{ id: s.id }} className="break-words font-medium hover:underline">{s.company_name}</Link>
+                        </div>
                         <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/30 bg-accent px-2 py-0.5 text-xs text-accent-foreground">
                           <ShieldCheck className="h-3 w-3" /> Verified
                         </span>

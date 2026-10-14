@@ -25,6 +25,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedOpenRfqsRouteImport } from './routes/_authenticated/open-rfqs'
+import { Route as FactoryIdRouteImport } from './routes/factory.$id'
 import { Route as HubCountryRouteImport } from './routes/hub.$country'
 import { Route as AuthenticatedRfqPrintIdRouteImport } from './routes/_authenticated/rfq-print.$id'
 import { Route as AuthenticatedSupplierProfileRouteImport } from './routes/_authenticated/supplier.profile'
@@ -109,6 +110,11 @@ const AuthenticatedOpenRfqsRoute = AuthenticatedOpenRfqsRouteImport.update({
   path: '/open-rfqs',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const FactoryIdRoute = FactoryIdRouteImport.update({
+  id: '/factory/$id',
+  path: '/factory/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HubCountryRoute = HubCountryRouteImport.update({
   id: '/hub/$country',
   path: '/hub/$country',
@@ -148,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/open-rfqs': typeof AuthenticatedOpenRfqsRoute
+  '/factory/$id': typeof FactoryIdRoute
   '/hub/$country': typeof HubCountryRoute
   '/rfq-print/$id': typeof AuthenticatedRfqPrintIdRoute
   '/supplier/profile': typeof AuthenticatedSupplierProfileRoute
@@ -169,6 +176,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/open-rfqs': typeof AuthenticatedOpenRfqsRoute
+  '/factory/$id': typeof FactoryIdRoute
   '/hub/$country': typeof HubCountryRoute
   '/rfq-print/$id': typeof AuthenticatedRfqPrintIdRoute
   '/supplier/profile': typeof AuthenticatedSupplierProfileRoute
@@ -192,6 +200,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/open-rfqs': typeof AuthenticatedOpenRfqsRoute
+  '/factory/$id': typeof FactoryIdRoute
   '/hub/$country': typeof HubCountryRoute
   '/_authenticated/rfq-print/$id': typeof AuthenticatedRfqPrintIdRoute
   '/_authenticated/supplier/profile': typeof AuthenticatedSupplierProfileRoute
@@ -215,6 +224,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/open-rfqs'
+    | '/factory/$id'
     | '/hub/$country'
     | '/rfq-print/$id'
     | '/supplier/profile'
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/open-rfqs'
+    | '/factory/$id'
     | '/hub/$country'
     | '/rfq-print/$id'
     | '/supplier/profile'
@@ -258,6 +269,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/open-rfqs'
+    | '/factory/$id'
     | '/hub/$country'
     | '/_authenticated/rfq-print/$id'
     | '/_authenticated/supplier/profile'
@@ -278,6 +290,7 @@ export interface RootRouteChildren {
   SignInRoute: typeof SignInRoute
   SuppliersRoute: typeof SuppliersRoute
   TermsRoute: typeof TermsRoute
+  FactoryIdRoute: typeof FactoryIdRoute
   HubCountryRoute: typeof HubCountryRoute
 }
 
@@ -395,6 +408,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOpenRfqsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/factory/$id': {
+      id: '/factory/$id'
+      path: '/factory/$id'
+      fullPath: '/factory/$id'
+      preLoaderRoute: typeof FactoryIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hub/$country': {
       id: '/hub/$country'
       path: '/hub/$country'
@@ -461,6 +481,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignInRoute: SignInRoute,
   SuppliersRoute: SuppliersRoute,
   TermsRoute: TermsRoute,
+  FactoryIdRoute: FactoryIdRoute,
   HubCountryRoute: HubCountryRoute,
 }
 export const routeTree = rootRouteImport

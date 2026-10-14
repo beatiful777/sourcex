@@ -147,6 +147,7 @@ export type Database = {
       }
       supplier_applications: {
         Row: {
+          logo_url: string | null
           business_email: string
           categories: string[]
           certifications: string[]
@@ -163,6 +164,7 @@ export type Database = {
           website_or_catalog: string | null
         }
         Insert: {
+          logo_url?: string | null
           business_email: string
           categories?: string[]
           certifications?: string[]
@@ -179,6 +181,7 @@ export type Database = {
           website_or_catalog?: string | null
         }
         Update: {
+          logo_url?: string | null
           business_email?: string
           categories?: string[]
           certifications?: string[]
