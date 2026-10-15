@@ -9,6 +9,8 @@ import { SampleRequestButton } from "@/components/sample-request-button";
 import { InquiryDialog } from "@/components/inquiry-dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useI18n, fmt } from "@/lib/i18n";
+import { useNames } from "@/lib/names";
 
 const searchSchema = z.object({
   q: z.string().optional().catch(undefined),
@@ -44,6 +46,8 @@ type Factory = {
 };
 
 export function Suppliers() {
+  const { t } = useI18n();
+  const names = useNames();
   const { q = "", category, country } = Route.useSearch();
   const navigate = useNavigate({ from: "/suppliers" });
   const set = (patch: Partial<z.infer<typeof searchSchema>>) =>
@@ -72,35 +76,35 @@ export function Suppliers() {
 
   return (
     <>
-      <PageHeader eyebrow="Directory" title="Find suppliers">
-        Only factories that applied, were reviewed and approved by our team. Nothing is listed automatically.
+      <PageHeader eyebrow={t("sp.eyebrow")} title={t("ft.findSuppliers")}>
+        {t("sp.lead")}
       </PageHeader>
       <div className="container-page py-12">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p className="text-sm text-muted-foreground">{t("c.loading")}</p>
         ) : approved.length === 0 ? (
           <FoundingNetwork />
         ) : (
           <div className="grid gap-10 lg:grid-cols-[240px_1fr]">
             <aside className="space-y-8">
               <div>
-                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Category</h3>
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("sp.category")}</h3>
                 <div className="flex flex-wrap gap-2 lg:flex-col">
-                  <Chip active={!category} onClick={() => set({ category: undefined })}>All</Chip>
+                  <Chip active={!category} onClick={() => set({ category: undefined })}>{t("sp.all")}</Chip>
                   {CATEGORIES.map((c) => (
-                    <Chip key={c.slug} active={category === c.name} onClick={() => set({ category: c.name })}>{c.name}</Chip>
+                    <Chip key={c.slug} active={category === c.name} onClick={() => set({ category: c.name })}>{names.category(c.name)}</Chip>
                   ))}
                 </div>
               </div>
               <div>
-                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Country</h3>
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("sp.country")}</h3>
                 <select
                   value={country ?? ""}
                   onChange={(e) => set({ country: e.target.value || undefined })}
                   className="h-9 w-full rounded-md border bg-background px-2 text-sm"
                 >
-                  <option value="">All countries</option>
-                  {COUNTRIES.map((c) => <option key={c.slug} value={c.name}>{c.name}</option>)}
+                  <option value="">{t("sp.allCountries")}</option>
+                  {COUNTRIES.map((c) => <option key={c.slug} value={c.name}>{names.country(c.name)}</option>)}
                 </select>
               </div>
             </aside>
@@ -110,16 +114,16 @@ export function Suppliers() {
                 <input
                   defaultValue={q}
                   onChange={(e) => set({ q: e.target.value || undefined })}
-                  placeholder="Search factories…"
+                  placeholder={t("sp.search")}
                   className="h-10 flex-1 bg-transparent text-sm outline-none"
                 />
               </div>
               <p className="mb-4 text-sm text-muted-foreground">
-                {results.length} approved {results.length === 1 ? "factory" : "factories"}
+                {fmt(t("sp.count"), { n: results.length })}
               </p>
               {results.length === 0 ? (
                 <p className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-                  No approved factory matches this filter yet.
+                  {t("sp.none")}
                 </p>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -133,27 +137,27 @@ export function Suppliers() {
                           <Link to="/factory/$id" params={{ id: s.id }} className="break-words font-medium hover:underline">{s.company_name}</Link>
                         </div>
                         <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/30 bg-accent px-2 py-0.5 text-xs text-accent-foreground">
-                          <ShieldCheck className="h-3 w-3" /> Verified
+                          <ShieldCheck className="h-3 w-3" /> {t("c.verified")}
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {[s.city, s.country].filter(Boolean).join(", ") || "Location not disclosed"}
+                        {[s.city, s.country ? names.country(s.country) : null].filter(Boolean).join(", ") || t("sp.location")}
                       </p>
                       {s.categories.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-1.5">
                           {s.categories.map((c) => (
-                            <span key={c} className="rounded-md border px-2 py-0.5 text-xs">{c}</span>
+                            <span key={c} className="rounded-md border px-2 py-0.5 text-xs">{names.category(c)}</span>
                           ))}
                         </div>
                       )}
                       <p className="mt-3 text-xs text-muted-foreground">
-                        {s.min_order_quantity ? `MOQ: ${s.min_order_quantity}` : "MOQ on request"}
+                        {s.min_order_quantity ? fmt(t("sp.moq"), { v: s.min_order_quantity }) : t("sp.moqOn")}
                         {s.certifications.length > 0 ? ` · ${s.certifications.join(", ")}` : ""}
                       </p>
                       <div className="mt-4 flex flex-wrap gap-2">
                         <InquiryDialog
                           target={s.company_name}
-                          trigger={<Button size="sm" className="justify-self-start">Request Quote</Button>}
+                          trigger={<Button size="sm" className="justify-self-start">{t("sp.quote")}</Button>}
                         />
                         <SampleRequestButton supplierId={s.id} company={s.company_name} />
                       </div>

@@ -2,8 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, FileText, ShieldCheck, Store } from "lucide-react";
 import { flagUrl, type Country } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
+import { useNames } from "@/lib/names";
 
 export function CountryCard({ c }: { c: Country }) {
+  const { t } = useI18n();
+  const names = useNames();
   return (
     <Link
       to="/hub/$country"
@@ -13,8 +17,8 @@ export function CountryCard({ c }: { c: Country }) {
       <div className="flex items-center gap-3">
         <img src={flagUrl(c.code)} alt="" loading="lazy" className="h-6 w-9 rounded-sm border object-cover" />
         <div>
-          <div className="text-sm font-medium">{c.name}</div>
-          <div className="text-xs text-muted-foreground">Explore</div>
+          <div className="text-sm font-medium">{names.country(c.name)}</div>
+          <div className="text-xs text-muted-foreground">{t("bl.explore")}</div>
         </div>
       </div>
       <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
@@ -23,21 +27,22 @@ export function CountryCard({ c }: { c: Country }) {
 }
 
 export function SuppliersEmpty({ note }: { note?: string }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center rounded-xl border border-dashed bg-subtle px-6 py-14 text-center">
       <div className="grid h-11 w-11 place-items-center rounded-full border bg-background">
         <ShieldCheck className="h-5 w-5 text-primary" />
       </div>
-      <h3 className="mt-4 font-semibold">Verified suppliers coming soon</h3>
+      <h3 className="mt-4 font-semibold">{t("bl.soonT")}</h3>
       <p className="mt-1 max-w-md text-sm text-muted-foreground">
-        {note ?? "Platform in private beta. We only list suppliers after verification — no placeholder listings."}
+        {note ?? t("bl.soonP")}
       </p>
       <div className="mt-5 flex flex-wrap justify-center gap-2">
         <Button asChild variant="outline" size="sm">
-          <Link to="/rfq">Post an RFQ instead</Link>
+          <Link to="/rfq">{t("bl.rfqInstead")}</Link>
         </Button>
         <Button asChild size="sm">
-          <Link to="/become-a-supplier">Apply as a supplier</Link>
+          <Link to="/become-a-supplier">{t("bl.apply")}</Link>
         </Button>
       </div>
     </div>
@@ -45,20 +50,19 @@ export function SuppliersEmpty({ note }: { note?: string }) {
 }
 
 export function FoundingNetwork() {
+  const { t } = useI18n();
   return (
     <div className="grid gap-4">
       <div className="rounded-xl border bg-subtle p-6 md:p-8">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-primary" />
-          <p className="eyebrow">Founding supplier program</p>
+          <p className="eyebrow">{t("bs.eyebrow")}</p>
         </div>
         <h2 className="mt-3 text-xl font-semibold tracking-tight md:text-2xl">
-          We curate directly with factories. Zero fake profiles.
+          {t("bl.fH")}
         </h2>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">
-          Every listing in this directory is a manufacturer that applied, was reviewed by hand and approved by us.
-          No placeholder companies, no invented production numbers. Right now the directory is empty — which means
-          you can be the first factory in it.
+          {t("bl.fP")}
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -66,26 +70,24 @@ export function FoundingNetwork() {
           <div className="grid h-10 w-10 place-items-center rounded-full border bg-subtle">
             <Store className="h-5 w-5 text-primary" />
           </div>
-          <h3 className="mt-4 font-semibold">Apply as a Founding Supplier</h3>
+          <h3 className="mt-4 font-semibold">{t("bl.applyH")}</h3>
           <p className="mt-2 flex-1 text-sm text-muted-foreground">
-            A verified badge on your listing, zero platform fees for the first six months and priority matching on
-            new requests. Review takes 24-48 hours.
+            {t("bl.applyP")}
           </p>
           <Button asChild className="mt-5 justify-self-start">
-            <Link to="/become-a-supplier">Start application</Link>
+            <Link to="/become-a-supplier">{t("bl.start")}</Link>
           </Button>
         </div>
         <div className="flex flex-col rounded-xl border p-6">
           <div className="grid h-10 w-10 place-items-center rounded-full border bg-subtle">
             <FileText className="h-5 w-5 text-primary" />
           </div>
-          <h3 className="mt-4 font-semibold">Need sourcing right now?</h3>
+          <h3 className="mt-4 font-semibold">{t("bl.needH")}</h3>
           <p className="mt-2 flex-1 text-sm text-muted-foreground">
-            Post a request for quotation. One brief reaches manufacturers across every relevant hub and you compare
-            quotes side by side.
+            {t("bl.needP")}
           </p>
           <Button asChild variant="outline" className="mt-5 justify-self-start">
-            <Link to="/rfq">Post an RFQ</Link>
+            <Link to="/rfq">{t("ft.postRfq")}</Link>
           </Button>
         </div>
       </div>

@@ -11,6 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useI18n, fmt } from "@/lib/i18n";
+import { useNames } from "@/lib/names";
+import type { Key } from "@/lib/translations";
 
 export const Route = createFileRoute("/become-a-supplier")({
   head: () => ({
@@ -27,28 +30,28 @@ export const Route = createFileRoute("/become-a-supplier")({
 });
 
 const business = z.object({
-  company_name: z.string().trim().min(2, "Enter your company name").max(120),
-  contact_name: z.string().trim().min(2, "Enter a contact name").max(100),
-  business_email: z.string().trim().email("Enter a valid email").max(255),
-  country: z.string().min(1, "Select your country"),
+  company_name: z.string().trim().min(2, "err.companyName").max(120),
+  contact_name: z.string().trim().min(2, "err.contactName").max(100),
+  business_email: z.string().trim().email("err.email").max(255),
+  country: z.string().min(1, "err.country"),
   city: z.string().trim().max(80).optional(),
   website_or_catalog: z.string().trim().max(255).optional(),
 });
 
 const capability = z.object({
-  categories: z.array(z.string()).min(1, "Pick at least one category"),
+  categories: z.array(z.string()).min(1, "err.categories"),
   min_order_quantity: z.string().trim().max(60).optional(),
   certifications: z.string().trim().max(400).optional(),
 });
 
 const facility = z.object({
-  factory_details: z.string().trim().min(20, "Tell us about your factory (20+ characters)").max(2000),
+  factory_details: z.string().trim().min(20, "err.factoryDetails").max(2000),
 });
 
 const STEPS = [
-  { title: "Business details", schema: business },
-  { title: "Production capabilities", schema: capability },
-  { title: "Contact & facility", schema: facility },
+  { title: "bs.step1", schema: business },
+  { title: "bs.step2", schema: capability },
+  { title: "bs.step3", schema: facility },
 ] as const;
 
 type Form = z.infer<typeof business> & z.infer<typeof capability> & z.infer<typeof facility>;
@@ -67,6 +70,8 @@ const emptyForm: Form = {
 };
 
 export function BecomeSupplier() {
+  const { t } = useI18n();
+  const names = useNames();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -81,7 +86,7 @@ export function BecomeSupplier() {
   }, []);
 
   const patch = (p: Partial<Form>) => setForm((f) => ({ ...f, ...p }));
-  const err = (k: string) => errors[k] && <p className="text-xs text-destructive">{errors[k]}</p>;
+  const err = (k: string) => errors[k] && <p className="text-xs text-destructive">{t(errors[k] as Key)}</p>;
 
   function next() {
     const schema = step === 0 ? business : step === 1 ? capability : facility;
@@ -99,7 +104,7 @@ export function BecomeSupplier() {
   async function submit() {
     const parsed = facility.safeParse(form);
     if (!parsed.success) {
-      setErrors({ factory_details: parsed.error.issues[0]?.message ?? "Please complete this field" });
+      setErrors({ factory_details: parsed.error.issues[0]?.message ?? "err.complete" });
       return;
     }
     setErrors({});
@@ -123,7 +128,7 @@ export function BecomeSupplier() {
     });
     setBusy(false);
     if (error) {
-      toast.error("Couldn't submit application", { description: "Please try again." });
+      toast.error(t("bs.fail"), { description: t("c.tryAgain") });
       return;
     }
     setDone(true);
@@ -132,25 +137,24 @@ export function BecomeSupplier() {
   if (done) {
     return (
       <>
-        <PageHeader eyebrow="Application received" title="Thank you">
-          We review every factory by hand — no automatic listings.
+        <PageHeader eyebrow={t("bs.doneEyebrow")} title={t("bs.doneTitle")}>
+          {t("bs.doneLead")}
         </PageHeader>
         <div className="container-page max-w-xl py-12">
           <div className="rounded-xl border p-6 text-center md:p-8">
             <div className="mx-auto grid h-11 w-11 place-items-center rounded-full border bg-accent">
               <Check className="h-5 w-5 text-primary" />
             </div>
-            <h2 className="mt-4 text-lg font-semibold">Your application is in the queue</h2>
+            <h2 className="mt-4 text-lg font-semibold">{t("bs.doneH")}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Our team will check your facility and products, then reply within 24-48 hours. Approved factories are
-              published in the supplier directory with a verified badge.
+              {t("bs.doneP")}
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
               <Button asChild size="sm">
-                <Link to="/open-rfqs">Browse open RFQs</Link>
+                <Link to="/open-rfqs">{t("ft.browseRfqs")}</Link>
               </Button>
               <Button asChild size="sm" variant="outline">
-                <Link to="/suppliers">Back to directory</Link>
+                <Link to="/suppliers">{t("bs.backDir")}</Link>
               </Button>
             </div>
           </div>
@@ -161,8 +165,8 @@ export function BecomeSupplier() {
 
   return (
     <>
-      <PageHeader eyebrow="Founding supplier program" title="Apply as a supplier">
-        Three short steps. Applications are reviewed by a person, not a bot.
+      <PageHeader eyebrow={t("bs.eyebrow")} title={t("bs.title")}>
+        {t("bs.lead")}
       </PageHeader>
       <div className="container-page max-w-2xl py-12">
         <ol className="mb-8 flex flex-wrap gap-2">
@@ -177,7 +181,7 @@ export function BecomeSupplier() {
               <span className="grid h-5 w-5 place-items-center rounded-full border text-[10px]">
                 {i < step ? <Check className="h-3 w-3" /> : i + 1}
               </span>
-              {s.title}
+              {t(s.title)}
             </li>
           ))}
         </ol>
@@ -195,43 +199,43 @@ export function BecomeSupplier() {
             <>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="company_name">Company name</Label>
-                  <Input id="company_name" value={form.company_name} onChange={(e) => patch({ company_name: e.target.value })} placeholder="e.g. Delta Textiles Ltd." />
+                  <Label htmlFor="company_name">{t("bs.company")}</Label>
+                  <Input id="company_name" value={form.company_name} onChange={(e) => patch({ company_name: e.target.value })} placeholder={t("bs.companyPh")} />
                   {err("company_name")}
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="contact_name">Contact person</Label>
-                  <Input id="contact_name" value={form.contact_name} onChange={(e) => patch({ contact_name: e.target.value })} placeholder="Full name" />
+                  <Label htmlFor="contact_name">{t("bs.contact")}</Label>
+                  <Input id="contact_name" value={form.contact_name} onChange={(e) => patch({ contact_name: e.target.value })} placeholder={t("bs.contactPh")} />
                   {err("contact_name")}
                 </div>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="business_email">Business email</Label>
+                <Label htmlFor="business_email">{t("bs.email")}</Label>
                 <Input id="business_email" type="email" value={form.business_email} onChange={(e) => patch({ business_email: e.target.value })} placeholder="you@factory.com" />
                 {err("business_email")}
               </div>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="country">Country</Label>
+                  <Label htmlFor="country">{t("bs.country")}</Label>
                   <select
                     id="country"
                     value={form.country}
                     onChange={(e) => patch({ country: e.target.value })}
                     className="h-9 w-full rounded-md border bg-background px-2 text-sm"
                   >
-                    <option value="">Select…</option>
-                    {COUNTRIES.map((c) => <option key={c.slug} value={c.name}>{c.name}</option>)}
+                    <option value="">{t("c.select")}</option>
+                    {COUNTRIES.map((c) => <option key={c.slug} value={c.name}>{names.country(c.name)}</option>)}
                   </select>
                   {err("country")}
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="city">City (optional)</Label>
-                  <Input id="city" value={form.city ?? ""} onChange={(e) => patch({ city: e.target.value })} placeholder="e.g. Dhaka" />
+                  <Label htmlFor="city">{t("bs.city")}</Label>
+                  <Input id="city" value={form.city ?? ""} onChange={(e) => patch({ city: e.target.value })} placeholder={t("bs.cityPh")} />
                   {err("city")}
                 </div>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="website_or_catalog">Website or catalogue (optional)</Label>
+                <Label htmlFor="website_or_catalog">{t("bs.site")}</Label>
                 <Input id="website_or_catalog" value={form.website_or_catalog ?? ""} onChange={(e) => patch({ website_or_catalog: e.target.value })} placeholder="https://…" />
                 {err("website_or_catalog")}
               </div>
@@ -241,8 +245,8 @@ export function BecomeSupplier() {
           {step === 1 && (
             <>
               <div className="grid gap-1.5">
-                <Label>What do you manufacture?</Label>
-                <p className="text-xs text-muted-foreground">Pick every category you can actually produce.</p>
+                <Label>{t("bs.make")}</Label>
+                <p className="text-xs text-muted-foreground">{t("bs.makeHint")}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {CATEGORIES.map((c) => {
                     const on = form.categories.includes(c.name);
@@ -260,7 +264,7 @@ export function BecomeSupplier() {
                           on ? "border-primary bg-accent text-accent-foreground" : "hover:bg-muted",
                         )}
                       >
-                        {c.name}
+                        {names.category(c.name)}
                       </button>
                     );
                   })}
@@ -269,13 +273,13 @@ export function BecomeSupplier() {
               </div>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="min_order_quantity">Minimum order quantity</Label>
-                  <Input id="min_order_quantity" value={form.min_order_quantity ?? ""} onChange={(e) => patch({ min_order_quantity: e.target.value })} placeholder="e.g. 1,000 pcs" />
+                  <Label htmlFor="min_order_quantity">{t("bs.moq")}</Label>
+                  <Input id="min_order_quantity" value={form.min_order_quantity ?? ""} onChange={(e) => patch({ min_order_quantity: e.target.value })} placeholder={t("bs.moqPh")} />
                   {err("min_order_quantity")}
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="certifications">Certifications</Label>
-                  <Input id="certifications" value={form.certifications ?? ""} onChange={(e) => patch({ certifications: e.target.value })} placeholder="e.g. ISO 9001, GOTS, BSCI" />
+                  <Label htmlFor="certifications">{t("bs.certs")}</Label>
+                  <Input id="certifications" value={form.certifications ?? ""} onChange={(e) => patch({ certifications: e.target.value })} placeholder={t("bs.certsPh")} />
                   {err("certifications")}
                 </div>
               </div>
@@ -285,9 +289,9 @@ export function BecomeSupplier() {
           {step === 2 && (
             <>
               <div className="grid gap-1.5">
-                <Label htmlFor="factory_details">Factory &amp; capacity</Label>
+                <Label htmlFor="factory_details">{t("bs.factory")}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Machines, lines, monthly output, main materials, export markets — anything that helps us verify you.
+                  {t("bs.factoryHint")}
                 </p>
                 <Textarea
                   id="factory_details"
@@ -295,14 +299,13 @@ export function BecomeSupplier() {
                   maxLength={2000}
                   value={form.factory_details}
                   onChange={(e) => patch({ factory_details: e.target.value })}
-                  placeholder="e.g. 220 sewing machines across 8 lines, ~180,000 pcs/month, knitwear and fleece, exporting to the EU and UK since 2016…"
+                  placeholder={t("bs.factoryPh")}
                 />
                 {err("factory_details")}
               </div>
               <div className="flex items-start gap-2 rounded-lg border bg-subtle p-4 text-xs text-muted-foreground">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                We contact you within 24-48 hours. Your details are only used to verify your factory — we never list
-                a company before it is approved.
+                {t("bs.note")}
               </div>
             </>
           )}
@@ -314,15 +317,15 @@ export function BecomeSupplier() {
               disabled={step === 0 || busy}
               onClick={() => setStep((s) => Math.max(0, s - 1))}
             >
-              <ChevronLeft className="mr-1 h-4 w-4" /> Back
+              <ChevronLeft className="mr-1 h-4 w-4" /> {t("c.back")}
             </Button>
             <Button type="submit" disabled={busy}>
               {busy ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting…</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("c.submitting")}</>
               ) : step === STEPS.length - 1 ? (
-                "Submit application"
+                t("bs.submit")
               ) : (
-                <>Continue <ChevronRight className="ml-1 h-4 w-4" /></>
+                <>{t("c.continue")} <ChevronRight className="ml-1 h-4 w-4" /></>
               )}
             </Button>
           </div>

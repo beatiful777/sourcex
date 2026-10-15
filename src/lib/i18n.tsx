@@ -50,3 +50,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 export function useI18n() {
   return useContext(I18nContext);
 }
+
+/** Replaces {name} placeholders in a translated string. */
+export function fmt(text: string, vars: Record<string, string | number>) {
+  return text.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ""));
+}

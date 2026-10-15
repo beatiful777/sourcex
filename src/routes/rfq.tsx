@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { LandedCostCalculator } from "@/components/landed-cost-calculator";
+import { useI18n, fmt } from "@/lib/i18n";
+import { useNames } from "@/lib/names";
+import type { Key } from "@/lib/translations";
 
 export const Route = createFileRoute("/rfq")({
   head: () => ({
@@ -24,11 +27,11 @@ export const Route = createFileRoute("/rfq")({
 });
 
 const schema = z.object({
-  product: z.string().trim().min(3, "Describe the product").max(150),
-  category: z.string().min(1, "Choose a category"),
+  product: z.string().trim().min(3, "err.product").max(150),
+  category: z.string().min(1, "err.category"),
   country: z.string().optional(),
-  quantity: z.string().trim().min(1, "Enter a quantity").max(60),
-  email: z.string().trim().email("Enter a valid email").max(255),
+  quantity: z.string().trim().min(1, "err.quantity").max(60),
+  email: z.string().trim().email("err.email").max(255),
   details: z.string().trim().max(2000).optional(),
   response_days: z.enum(["7", "14", "30"]),
 });
@@ -49,6 +52,8 @@ function fileAllowed(f: File) {
 }
 
 function Rfq() {
+  const { t } = useI18n();
+  const names = useNames();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
@@ -62,10 +67,10 @@ function Rfq() {
   function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(e.target.files ?? []);
     const bad = picked.find((f) => !fileAllowed(f));
-    if (bad) { toast.error(`File type not allowed: ${bad.name}`); e.target.value = ""; return; }
+    if (bad) { toast.error(fmt(t("rfq.badType"), { name: bad.name })); e.target.value = ""; return; }
     const big = picked.find((f) => f.size > MAX_FILE_MB * 1024 * 1024);
-    if (big) { toast.error(`${big.name} is larger than ${MAX_FILE_MB} MB`); e.target.value = ""; return; }
-    if (picked.length > MAX_FILES) { toast.error(`Up to ${MAX_FILES} files`); e.target.value = ""; return; }
+    if (big) { toast.error(fmt(t("rfq.tooBig"), { name: big.name, mb: MAX_FILE_MB })); e.target.value = ""; return; }
+    if (picked.length > MAX_FILES) { toast.error(fmt(t("rfq.tooMany"), { max: MAX_FILES })); e.target.value = ""; return; }
     setFiles(picked);
   }
 
@@ -122,54 +127,54 @@ function Rfq() {
     }).select("id").single();
     if (error) {
       setBusy(false);
-      toast.error("Couldn't submit RFQ", { description: "Please try again." });
+      toast.error(t("rfq.fail"), { description: t("c.tryAgain") });
       return;
     }
     let fileNote = "";
     if (files.length && u.user) {
       const { ok, fail } = await uploadFiles(inserted.id);
-      if (ok && !fail) fileNote = `${ok} file${ok > 1 ? "s" : ""} attached.`;
-      else if (ok) fileNote = `${ok} file${ok > 1 ? "s" : ""} attached, ${fail} failed.`;
-      else fileNote = "Files couldn't be attached.";
+      if (ok && !fail) fileNote = fmt(t("rfq.filesOk"), { ok });
+      else if (ok) fileNote = fmt(t("rfq.filesPartial"), { ok, fail });
+      else fileNote = t("rfq.filesNone");
     }
     setBusy(false);
     form.reset();
     setFiles([]);
-    toast.success("RFQ submitted", {
+    toast.success(t("rfq.ok"), {
       description: [
         u.user
-          ? "It's on your dashboard — supplier applications will appear there."
-          : "Sign in before posting to track supplier applications on your dashboard.",
+          ? t("rfq.okAuth")
+          : t("rfq.okGuest"),
         fileNote,
       ].filter(Boolean).join(" "),
     });
   }
-  const err = (k: string) => errors[k] && <p className="text-xs text-destructive">{errors[k]}</p>;
+  const err = (k: string) => errors[k] && <p className="text-xs text-destructive">{t(errors[k] as Key)}</p>;
   const sel = "h-9 w-full rounded-md border bg-background px-2 text-sm";
   return (
     <>
-      <PageHeader eyebrow="Request for quotation" title="Post an RFQ">
-        Tell us what you need. One request reaches suppliers across relevant hubs.
+      <PageHeader eyebrow={t("rfq.eyebrow")} title={t("ft.postRfq")}>
+        {t("rfq.lead")}
       </PageHeader>
       <div className="container-page max-w-2xl py-12">
         <form onSubmit={onSubmit} noValidate className="grid gap-5 rounded-xl border p-6 md:p-8">
-          <div className="grid gap-1.5"><Label htmlFor="product">Product</Label><Input id="product" name="product" placeholder="e.g. Organic cotton t-shirts, 180 gsm" />{err("product")}</div>
+          <div className="grid gap-1.5"><Label htmlFor="product">{t("rfq.product")}</Label><Input id="product" name="product" placeholder={t("rfq.productPh")} />{err("product")}</div>
           <div className="grid gap-5 sm:grid-cols-2">
-            <div className="grid gap-1.5"><Label htmlFor="category">Category</Label>
-              <select id="category" name="category" className={sel} defaultValue=""><option value="">Select…</option>{CATEGORIES.map((c) => <option key={c.slug} value={c.name}>{c.name}</option>)}</select>{err("category")}</div>
-            <div className="grid gap-1.5"><Label htmlFor="country">Preferred hub (optional)</Label>
-              <select id="country" name="country" className={sel} defaultValue=""><option value="">Any country</option>{COUNTRIES.map((c) => <option key={c.slug} value={c.name}>{c.name}</option>)}</select></div>
+            <div className="grid gap-1.5"><Label htmlFor="category">{t("rfq.category")}</Label>
+              <select id="category" name="category" className={sel} defaultValue=""><option value="">{t("c.select")}</option>{CATEGORIES.map((c) => <option key={c.slug} value={c.name}>{names.category(c.name)}</option>)}</select>{err("category")}</div>
+            <div className="grid gap-1.5"><Label htmlFor="country">{t("rfq.hub")}</Label>
+              <select id="country" name="country" className={sel} defaultValue=""><option value="">{t("rfq.anyCountry")}</option>{COUNTRIES.map((c) => <option key={c.slug} value={c.name}>{names.country(c.name)}</option>)}</select></div>
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
-            <div className="grid gap-1.5"><Label htmlFor="quantity">Quantity</Label><Input id="quantity" name="quantity" placeholder="e.g. 2,000 pcs" /></div>
-            <div className="grid gap-1.5"><Label htmlFor="email">Work email</Label><Input id="email" name="email" type="email" defaultValue={email} onChange={(e) => setEmail(e.target.value)} />{err("email")}</div>
+            <div className="grid gap-1.5"><Label htmlFor="quantity">{t("rfq.qty")}</Label><Input id="quantity" name="quantity" placeholder={t("rfq.qtyPh")} />{err("quantity")}</div>
+            <div className="grid gap-1.5"><Label htmlFor="email">{t("rfq.email")}</Label><Input id="email" name="email" type="email" defaultValue={email} onChange={(e) => setEmail(e.target.value)} />{err("email")}</div>
           </div>
-          <div className="grid gap-1.5"><Label htmlFor="response_days">Answers needed within</Label>
-            <select id="response_days" name="response_days" className={sel} defaultValue="14"><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select>
-            <p className="text-xs text-muted-foreground">After this date the RFQ is hidden from factories. You can extend it from your dashboard.</p></div>
-          <div className="grid gap-1.5"><Label htmlFor="details">Details (optional)</Label><Textarea id="details" name="details" rows={4} placeholder="Specs, certifications, target price, delivery date…" /></div>
+          <div className="grid gap-1.5"><Label htmlFor="response_days">{t("rfq.within")}</Label>
+            <select id="response_days" name="response_days" className={sel} defaultValue="14"><option value="7">{t("rfq.d7")}</option><option value="14">{t("rfq.d14")}</option><option value="30">{t("rfq.d30")}</option></select>
+            <p className="text-xs text-muted-foreground">{t("rfq.hidden")}</p></div>
+          <div className="grid gap-1.5"><Label htmlFor="details">{t("rfq.details")}</Label><Textarea id="details" name="details" rows={4} placeholder={t("rfq.detailsPh")} /></div>
           <div className="grid gap-1.5">
-            <Label htmlFor="rfq-files">Attach files (optional)</Label>
+            <Label htmlFor="rfq-files">{t("rfq.attach")}</Label>
             {signedIn ? (
               <input
                 id="rfq-files"
@@ -180,19 +185,19 @@ function Rfq() {
               />
             ) : (
               <p className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
-                Sign in to attach photos or drawings. Guests can still submit the form without files.
+                {t("rfq.signInAttach")}
               </p>
             )}
             {files.length > 0 && (
               <p className="text-xs text-muted-foreground">
-                {files.length} file{files.length > 1 ? "s" : ""} ready: {files.map((f) => f.name).join(", ")}
+                {fmt(t("rfq.filesReady"), { n: files.length, names: files.map((f) => f.name).join(", ") })}
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              Up to {MAX_FILES} files, {MAX_FILE_MB} MB each. Photos, PDF or CAD drawings (DXF, DWG, STEP).
+              {fmt(t("rfq.limits"), { max: MAX_FILES, mb: MAX_FILE_MB })}
             </p>
           </div>
-          <Button type="submit" disabled={busy}>{busy ? "Submitting…" : "Submit RFQ"}</Button>
+          <Button type="submit" disabled={busy}>{busy ? t("c.submitting") : t("rfq.submit")}</Button>
         </form>
         <LandedCostCalculator />
       </div>

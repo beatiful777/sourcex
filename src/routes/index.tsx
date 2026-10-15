@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Search, FileText, MessagesSquare, PackageCheck, X, ShieldCheck, BadgeCheck, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CATEGORIES, filterCountries, categoryName } from "@/lib/catalog";
+import { CATEGORIES, filterCountries } from "@/lib/catalog";
+import { useNames } from "@/lib/names";
 import { CountryCard, SuppliersEmpty } from "@/components/blocks";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { t } = useI18n();
+  const names = useNames();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -123,8 +125,8 @@ function Home() {
                 )}
               >
                 <c.icon className={cn("h-5 w-5", active ? "text-primary" : "text-foreground")} strokeWidth={1.6} />
-                <div className="mt-6 text-sm font-medium">{c.name}</div>
-                <div className="mt-1 text-xs text-muted-foreground">{c.description}</div>
+                <div className="mt-6 text-sm font-medium">{names.categoryBySlug(c.slug)}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{names.categoryDesc(c.slug)}</div>
               </button>
             );
           })}
@@ -140,7 +142,7 @@ function Home() {
               <div className="flex items-center gap-3 text-sm">
                 <span className="text-muted-foreground">
                   {hubs.length} {t("home.hubsWord")}
-                  {category && <> · {categoryName(category)}</>}
+                  {category && <> · {names.categoryBySlug(category)}</>}
                   {query && <> · “{query}”</>}
                 </span>
                 <button onClick={() => { setQuery(""); setCategory(null); }} className="font-medium text-primary">{t("home.clear")}</button>

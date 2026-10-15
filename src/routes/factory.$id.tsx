@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { InquiryDialog } from "@/components/inquiry-dialog";
 import { SampleRequestButton } from "@/components/sample-request-button";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
+import { useNames } from "@/lib/names";
 
 export const Route = createFileRoute("/factory/$id")({
   head: () => ({
@@ -44,6 +46,8 @@ function safeUrl(raw: string | null): string | null {
 }
 
 function FactoryPage() {
+  const { t } = useI18n();
+  const names = useNames();
   const { id } = Route.useParams();
   const { data, isLoading, error } = useQuery({
     queryKey: ["factory", id],
@@ -59,36 +63,36 @@ function FactoryPage() {
     },
   });
 
-  if (isLoading) return <div className="container-page py-16 text-sm text-muted-foreground">Loading…</div>;
+  if (isLoading) return <div className="container-page py-16 text-sm text-muted-foreground">{t("c.loading")}</div>;
 
   if (error || !data)
     return (
       <div className="container-page flex min-h-[50vh] flex-col items-center justify-center text-center">
-        <h1 className="text-xl font-semibold">Factory not found</h1>
-        <p className="mt-2 text-sm text-muted-foreground">It may not be approved yet, or the link is wrong.</p>
-        <Link to="/suppliers" className="mt-6 text-sm font-medium text-primary">← Back to suppliers</Link>
+        <h1 className="text-xl font-semibold">{t("fp.notFound")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{t("fp.notFoundD")}</p>
+        <Link to="/suppliers" className="mt-6 text-sm font-medium text-primary">{t("fp.backSuppliers")}</Link>
       </div>
     );
 
   const site = safeUrl(data.website_or_catalog);
   const logo = data.logo_url && data.logo_url.startsWith("https://") ? data.logo_url : null;
-  const place = [data.city, data.country].filter(Boolean).join(", ");
+  const place = [data.city, data.country ? names.country(data.country) : null].filter(Boolean).join(", ");
 
   return (
     <div className="container-page max-w-3xl py-12">
       <Link to="/suppliers" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> All suppliers
+        <ArrowLeft className="h-4 w-4" /> {t("fp.all")}
       </Link>
 
       <div className="mt-6 flex items-start gap-5">
         <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-xl border bg-muted text-xs text-muted-foreground">
-          {logo ? <img src={logo} alt={`${data.company_name} logo`} className="h-full w-full object-contain" /> : "No logo"}
+          {logo ? <img src={logo} alt={`${data.company_name} logo`} className="h-full w-full object-contain" /> : t("fp.noLogo")}
         </div>
         <div className="min-w-0">
           <h1 className="break-words text-2xl font-semibold tracking-tight">{data.company_name}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-accent px-2 py-0.5 text-xs text-accent-foreground">
-              <ShieldCheck className="h-3 w-3" /> Verified
+              <ShieldCheck className="h-3 w-3" /> {t("c.verified")}
             </span>
             {place && (
               <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {place}</span>
@@ -99,7 +103,7 @@ function FactoryPage() {
 
       {data.factory_details && (
         <section className="mt-8">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">About</h2>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("fp.about")}</h2>
           <p className="whitespace-pre-line text-sm leading-relaxed">{data.factory_details}</p>
         </section>
       )}
@@ -107,25 +111,25 @@ function FactoryPage() {
       <section className="mt-8 grid gap-6 sm:grid-cols-2">
         {data.categories.length > 0 && (
           <div>
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Categories</h2>
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("fp.categories")}</h2>
             <div className="flex flex-wrap gap-1.5">
-              {data.categories.map((c) => <span key={c} className="rounded-md border px-2 py-0.5 text-xs">{c}</span>)}
+              {data.categories.map((c) => <span key={c} className="rounded-md border px-2 py-0.5 text-xs">{names.category(c)}</span>)}
             </div>
           </div>
         )}
         <div>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Minimum order</h2>
-          <p className="text-sm">{data.min_order_quantity || "On request"}</p>
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("fp.minOrder")}</h2>
+          <p className="text-sm">{data.min_order_quantity || t("fp.onRequest")}</p>
         </div>
         {data.certifications.length > 0 && (
           <div>
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Certifications</h2>
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("fp.certs")}</h2>
             <p className="text-sm">{data.certifications.join(", ")}</p>
           </div>
         )}
         {site && (
           <div>
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Website / catalog</h2>
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t("fp.site")}</h2>
             <a href={site} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 break-all text-sm text-primary">
               {data.website_or_catalog} <ExternalLink className="h-3.5 w-3.5 shrink-0" />
             </a>
@@ -134,8 +138,8 @@ function FactoryPage() {
       </section>
 
       <div className="mt-10 flex flex-wrap gap-2 border-t pt-6">
-        <Button asChild><Link to="/rfq">Post an RFQ</Link></Button>
-        <InquiryDialog target={data.company_name} trigger={<Button variant="outline">Send inquiry</Button>} />
+        <Button asChild><Link to="/rfq">{t("ft.postRfq")}</Link></Button>
+        <InquiryDialog target={data.company_name} trigger={<Button variant="outline">{t("fp.inquiry")}</Button>} />
         <SampleRequestButton supplierId={data.id} company={data.company_name} />
       </div>
     </div>

@@ -5,6 +5,7 @@ import type { GeometryCollection, Topology } from "topojson-specification";
 import type { FeatureCollection, Geometry } from "geojson";
 import worldData from "world-atlas/countries-110m.json";
 import { useI18n } from "@/lib/i18n";
+import { useNames } from "@/lib/names";
 
 // Catalog names that differ from the Natural Earth names in the atlas file.
 const ATLAS_ALIAS: Record<string, string> = { USA: "United States of America", "Czech Republic": "Czechia" };
@@ -21,6 +22,7 @@ const paths = land.features.map((f) => ({ name: f.properties.name, d: pathGen(f)
 /** Draws countries that have approved factories. `hubs` must come from the database; with none, the map is blank. */
 export function HubMap({ hubs }: { hubs: HubCount[] }) {
   const { t } = useI18n();
+  const names = useNames();
   const byAtlas = useMemo(() => new Map(hubs.map((h) => [ATLAS_ALIAS[h.country] ?? h.country, h])), [hubs]);
   const undrawn = hubs.filter((h) => !paths.some((p) => p.name === (ATLAS_ALIAS[h.country] ?? h.country)));
   return (
@@ -30,7 +32,7 @@ export function HubMap({ hubs }: { hubs: HubCount[] }) {
           const h = byAtlas.get(p.name);
           return (
             <path key={p.name} d={p.d} className={h ? "fill-primary stroke-background" : "fill-muted-foreground/20 stroke-background"} strokeWidth={0.5}>
-              {h ? <title>{t("map.tip").replace("{country}", h.country).replace("{n}", String(h.count))}</title> : null}
+              {h ? <title>{t("map.tip").replace("{country}", names.country(h.country)).replace("{n}", String(h.count))}</title> : null}
             </path>
           );
         })}
@@ -39,7 +41,7 @@ export function HubMap({ hubs }: { hubs: HubCount[] }) {
         {hubs.length === 0
           ? t("map.empty")
           : t("map.caption").replace("{n}", String(hubs.length))}
-        {undrawn.length ? ` ${t("map.undrawn").replace("{list}", undrawn.map((h) => h.country).join(", "))}` : ""}
+        {undrawn.length ? ` ${t("map.undrawn").replace("{list}", undrawn.map((h) => names.country(h.country)).join(", "))}` : ""}
       </figcaption>
     </figure>
   );

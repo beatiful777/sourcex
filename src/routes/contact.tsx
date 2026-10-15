@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useI18n, fmt } from "@/lib/i18n";
+import type { Key } from "@/lib/translations";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -24,12 +26,13 @@ export const Route = createFileRoute("/contact")({
 });
 
 const schema = z.object({
-  name: z.string().trim().min(2, "Enter your name").max(100),
-  email: z.string().trim().email("Enter a valid email").max(255),
-  message: z.string().trim().min(10, "Tell us a bit more (10+ characters)").max(4000),
+  name: z.string().trim().min(2, "err.name").max(100),
+  email: z.string().trim().email("err.email").max(255),
+  message: z.string().trim().min(10, "err.message").max(4000),
 });
 
 function Contact() {
+  const { t } = useI18n();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -55,7 +58,7 @@ function Contact() {
     const { error } = await supabase.from("contact_messages").insert(parsed.data);
     setBusy(false);
     if (error) {
-      toast.error("Couldn't send your message", { description: "Please try again in a moment." });
+      toast.error(t("ct.fail"), { description: t("ct.failD") });
       return;
     }
     form.reset();
@@ -64,37 +67,37 @@ function Contact() {
 
   return (
     <>
-      <PageHeader eyebrow="Contact" title="Send us a message">
-        Describe your question or problem. We read every message and reply to the email you leave.
+      <PageHeader eyebrow={t("ct.eyebrow")} title={t("ct.title")}>
+        {t("ct.lead")}
       </PageHeader>
       <div className="container-page py-12">
         <div className="mx-auto max-w-xl">
           {sent ? (
             <div className="rounded-xl border bg-subtle p-6 text-sm">
-              <p className="font-semibold">Message sent</p>
-              <p className="mt-2 text-muted-foreground">Thank you. We will get back to you at the email you provided.</p>
+              <p className="font-semibold">{t("ct.sentH")}</p>
+              <p className="mt-2 text-muted-foreground">{t("ct.sentP")}</p>
               <Button className="mt-4" variant="outline" size="sm" onClick={() => setSent(false)}>
-                Send another message
+                {t("ct.another")}
               </Button>
             </div>
           ) : (
             <form onSubmit={onSubmit} className="grid gap-4" noValidate>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="name">Your name</Label>
+                  <Label htmlFor="name">{t("ct.name")}</Label>
                   <Input id="name" name="name" autoComplete="name" />
-                  {errors["name"] && <p className="text-xs text-destructive">{errors["name"]}</p>}
+                  {errors["name"] && <p className="text-xs text-destructive">{t(errors["name"] as Key)}</p>}
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="email">Your email</Label>
+                  <Label htmlFor="email">{t("ct.email")}</Label>
                   <Input id="email" name="email" type="email" autoComplete="email" />
-                  {errors["email"] && <p className="text-xs text-destructive">{errors["email"]}</p>}
+                  {errors["email"] && <p className="text-xs text-destructive">{t(errors["email"] as Key)}</p>}
                 </div>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="message">What is the problem or question?</Label>
+                <Label htmlFor="message">{t("ct.msg")}</Label>
                 <Textarea id="message" name="message" rows={6} />
-                {errors["message"] && <p className="text-xs text-destructive">{errors["message"]}</p>}
+                {errors["message"] && <p className="text-xs text-destructive">{t(errors["message"] as Key)}</p>}
               </div>
               <div className="hidden" aria-hidden="true">
                 <label>
@@ -103,7 +106,7 @@ function Contact() {
                 </label>
               </div>
               <Button type="submit" disabled={busy}>
-                {busy ? "Sending…" : "Send message"}
+                {busy ? t("c.sending") : t("ct.send")}
               </Button>
             </form>
           )}
