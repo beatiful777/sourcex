@@ -63,10 +63,6 @@ function How() {
           ))}
         </div>
 
-        <div className="mt-10 rounded-xl border bg-subtle p-6 text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{t("how.noteLead")}</span> {t("how.note")}
-        </div>
-
         <div className="mt-10 flex flex-wrap justify-center gap-2">
           <Button asChild size="lg"><Link to="/rfq">{t("ft.postRfq")}</Link></Button>
           <Button asChild size="lg" variant="outline"><Link to="/become-a-supplier">{t("ft.become")}</Link></Button>

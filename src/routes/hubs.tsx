@@ -50,8 +50,7 @@ function Hubs() {
         {t("hubs.lead")}
       </PageHeader>
       <div className="container-page space-y-12 py-14">
-        <section aria-labelledby="hub-map-h">
-          <h2 id="hub-map-h" className="mb-4 text-sm font-semibold text-muted-foreground">{t("hubs.mapTitle")}</h2>
+        <section>
           {isLoading ? <div className="h-64 animate-pulse rounded-xl border bg-muted/30" /> : <HubMap hubs={hubs ?? []} />}
         </section>
         {REGIONS.map((r) => {

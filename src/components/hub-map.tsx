@@ -37,12 +37,12 @@ export function HubMap({ hubs }: { hubs: HubCount[] }) {
           );
         })}
       </svg>
-      <figcaption className="mt-3 text-sm text-muted-foreground">
-        {hubs.length === 0
-          ? t("map.empty")
-          : t("map.caption").replace("{n}", String(hubs.length))}
-        {undrawn.length ? ` ${t("map.undrawn").replace("{list}", undrawn.map((h) => names.country(h.country)).join(", "))}` : ""}
-      </figcaption>
+      {(hubs.length > 0 || undrawn.length > 0) && (
+        <figcaption className="mt-3 text-sm text-muted-foreground">
+          {hubs.length > 0 ? t("map.caption").replace("{n}", String(hubs.length)) : ""}
+          {undrawn.length ? ` ${t("map.undrawn").replace("{list}", undrawn.map((h) => names.country(h.country)).join(", "))}` : ""}
+        </figcaption>
+      )}
     </figure>
   );
 }

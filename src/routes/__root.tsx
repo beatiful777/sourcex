@@ -89,10 +89,6 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
       <div className="flex min-h-screen flex-col">
-        <div className="border-b bg-subtle px-4 py-1.5 text-center text-xs text-muted-foreground print:hidden">
-          Working prototype in private beta.{" "}
-          <Link to="/about" className="font-medium text-foreground underline">About this project</Link>
-        </div>
         <SiteHeader />
         <main className="flex-1">
           <Outlet />

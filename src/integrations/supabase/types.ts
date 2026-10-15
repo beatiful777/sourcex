@@ -100,6 +100,44 @@ export type Database = {
           },
         ]
       }
+      rfq_attachments: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          file_name: string
+          id: string
+          rfq_id: string
+          size_bytes: number
+          storage_path: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          file_name: string
+          id?: string
+          rfq_id: string
+          size_bytes?: number
+          storage_path: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          file_name?: string
+          id?: string
+          rfq_id?: string
+          size_bytes?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_attachments_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rfqs: {
         Row: {
           category: string
@@ -274,6 +312,10 @@ export type Database = {
       my_factory_profile: {
         Args: never
         Returns: { categories: string[]; certifications: string[]; company_name: string; country: string; factory_details: string; id: string; min_order_quantity: string; status: string; website_or_catalog: string }[]
+      }
+      update_factory_logo: {
+        Args: { _id: string; _logo_url: string }
+        Returns: undefined
       }
       update_factory_profile: {
         Args: { _categories: string[]; _certifications: string[]; _company_name: string; _country: string; _factory_details: string; _id: string; _min_order_quantity: string; _website: string }

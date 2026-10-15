@@ -44,7 +44,6 @@ function LiveNumbers() {
   return (
     <section aria-labelledby="live-numbers" className="mt-10">
       <h2 id="live-numbers" className="font-semibold">{t("about.liveTitle")}</h2>
-      <p className="mt-1 text-sm text-muted-foreground">{t("about.liveDesc")}</p>
       {error ? (
         <p role="alert" className="mt-4 text-sm text-destructive">{t("about.liveErr")}</p>
       ) : (
