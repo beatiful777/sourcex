@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Search, FileText, MessagesSquare, PackageCheck, X } from "lucide-react";
+import { Search, FileText, MessagesSquare, PackageCheck, X, ShieldCheck, BadgeCheck, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CATEGORIES, filterCountries, categoryName } from "@/lib/catalog";
 import { CountryCard, SuppliersEmpty } from "@/components/blocks";
@@ -61,12 +61,43 @@ function Home() {
             )}
             <Button type="submit" className="h-10 px-5">Search</Button>
           </form>
-          <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs text-muted-foreground">
+          <div className="mx-auto mt-8 grid max-w-2xl gap-3 sm:grid-cols-2">
+            <Link to="/rfq" className="rounded-xl border bg-background p-4 text-left transition-colors hover:border-primary">
+              <p className="text-sm font-semibold">I'm a buyer</p>
+              <p className="mt-1 text-xs text-muted-foreground">Describe what you need and compare quotes from factories.</p>
+              <span className="mt-3 inline-block text-sm font-medium text-primary">Post an RFQ →</span>
+            </Link>
+            <Link to="/become-a-supplier" className="rounded-xl border bg-background p-4 text-left transition-colors hover:border-primary">
+              <p className="text-sm font-semibold">I'm a factory</p>
+              <p className="mt-1 text-xs text-muted-foreground">Apply to be listed and answer buyers' requests in your categories.</p>
+              <span className="mt-3 inline-block text-sm font-medium text-primary">Become a supplier →</span>
+            </Link>
+          </div>
+          <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs text-muted-foreground">
             Popular:
             {["Textiles", "Vietnam", "Electronics", "Europe"].map((t) => (
               <button key={t} onClick={() => setQuery(t)} className="underline-offset-4 hover:text-foreground hover:underline">{t}</button>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Trust */}
+      <section className="container-page py-14">
+        <div className="grid gap-6 md:grid-cols-3">
+          {[
+            { icon: ShieldCheck, t: "Factories reviewed by hand", d: "Every supplier application is reviewed before the factory is listed." },
+            { icon: BadgeCheck, t: "Real listings only", d: "No placeholder companies or made-up reviews. What you see comes from real submissions." },
+            { icon: Scale, t: "Quotes side by side", d: "Price, lead time and minimum order in one place; the best price and fastest lead time are highlighted." },
+          ].map((b) => (
+            <div key={b.t} className="flex gap-3">
+              <b.icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={1.6} />
+              <div>
+                <h3 className="text-sm font-semibold">{b.t}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{b.d}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
