@@ -4,6 +4,7 @@ import { ShieldCheck, Globe2, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/blocks";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -21,25 +22,8 @@ export const Route = createFileRoute("/about")({
   component: About,
 });
 
-const PILLARS = [
-  {
-    icon: ShieldCheck,
-    t: "Verified suppliers only",
-    d: "Every factory in the directory applied, was reviewed by hand and approved before its listing went live. No placeholder companies, no invented production numbers — an honest empty directory beats a fake full one.",
-  },
-  {
-    icon: Globe2,
-    t: "Country-neutral hubs",
-    d: "Sourcing hubs across Asia, Europe, the Americas and MENA & Africa are presented the same way, so you can compare capability on merit: cost, lead time, capacity, certifications.",
-  },
-  {
-    icon: FileText,
-    t: "Comparable quotes",
-    d: "Buyers post one structured RFQ. Suppliers answer with unit price, lead time and a short note in the same format — so quotes can actually be compared side by side.",
-  },
-];
-
 function LiveNumbers() {
+  const { t } = useI18n();
   const { data: s, isPending, error } = useQuery({
     queryKey: ["public-platform-stats"],
     staleTime: 60_000,
@@ -50,14 +34,19 @@ function LiveNumbers() {
     },
   });
   const items = s
-    ? ([["Verified factories", s.suppliers], ["Countries represented", s.countries], ["Open RFQs", s.open_rfqs], ["Quotes sent", s.quotes]] as const)
+    ? ([
+        [t("about.stat.factories"), s.suppliers],
+        [t("about.stat.countries"), s.countries],
+        [t("about.stat.rfqs"), s.open_rfqs],
+        [t("about.stat.quotes"), s.quotes],
+      ] as const)
     : [];
   return (
     <section aria-labelledby="live-numbers" className="mt-10">
-      <h2 id="live-numbers" className="font-semibold">Live numbers</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Counted from the database right now, not typed in. Zero means zero.</p>
+      <h2 id="live-numbers" className="font-semibold">{t("about.liveTitle")}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">{t("about.liveDesc")}</p>
       {error ? (
-        <p role="alert" className="mt-4 text-sm text-destructive">Couldn't load the numbers.</p>
+        <p role="alert" className="mt-4 text-sm text-destructive">{t("about.liveErr")}</p>
       ) : (
         <dl className="mt-4 grid gap-3 sm:grid-cols-4">
           {isPending
@@ -75,30 +64,26 @@ function LiveNumbers() {
 }
 
 function About() {
+  const { t } = useI18n();
+  const pillars = [
+    { icon: ShieldCheck, t: t("about.pill1t"), d: t("about.pill1d") },
+    { icon: Globe2, t: t("about.pill2t"), d: t("about.pill2d") },
+    { icon: FileText, t: t("about.pill3t"), d: t("about.pill3d") },
+  ];
   return (
     <>
-      <PageHeader eyebrow="About" title="About SOURCEX">
-        A neutral B2B sourcing hub connecting buyers with verified manufacturing capability.
+      <PageHeader eyebrow={t("about.eyebrow")} title={t("about.title")}>
+        {t("about.lead")}
       </PageHeader>
       <div className="container-page max-w-3xl py-14">
         <div className="space-y-5 text-muted-foreground">
-          <p>
-            Sourcing today runs on outdated directories: thousands of listings, no way to tell a real factory from
-            a reseller, and quotes that arrive as unstructured emails you can't compare.
-          </p>
-          <p>
-            SOURCEX flips that. Suppliers can't buy their way in — they apply, a human reviews the factory details,
-            and only approved manufacturers appear in the public directory. Buyers post one clear request for
-            quotation, and verified factories in the matching hubs respond with comparable offers.
-          </p>
-          <p>
-            The platform is built by a student founder and is in private beta. We list suppliers only after
-            verification, and we would rather show an empty directory than a fake one.
-          </p>
+          <p>{t("about.p1")}</p>
+          <p>{t("about.p2")}</p>
+          <p>{t("about.p3")}</p>
         </div>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-3">
-          {PILLARS.map((p) => (
+          {pillars.map((p) => (
             <div key={p.t} className="rounded-xl border bg-card p-6">
               <p.icon className="h-5 w-5 text-primary" strokeWidth={1.6} />
               <h2 className="mt-4 font-semibold">{p.t}</h2>
@@ -110,13 +95,14 @@ function About() {
         <LiveNumbers />
 
         <div className="mt-10 rounded-xl border bg-subtle p-6">
-          <h2 className="font-semibold">Get in touch</h2>
+          <h2 className="font-semibold">{t("about.contactTitle")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Questions, partnership ideas or press: <Link className="text-foreground underline underline-offset-4" to="/contact">send us a message</Link>
+            {t("about.contactPre")}{" "}
+            <Link className="text-foreground underline underline-offset-4" to="/contact">{t("about.contactLink")}</Link>
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Button asChild size="sm"><Link to="/rfq">Post an RFQ</Link></Button>
-            <Button asChild size="sm" variant="outline"><Link to="/become-a-supplier">Become a supplier</Link></Button>
+            <Button asChild size="sm"><Link to="/rfq">{t("ft.postRfq")}</Link></Button>
+            <Button asChild size="sm" variant="outline"><Link to="/become-a-supplier">{t("ft.become")}</Link></Button>
           </div>
         </div>
       </div>

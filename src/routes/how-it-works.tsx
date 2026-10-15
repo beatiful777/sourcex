@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { PageHeader } from "@/components/blocks";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/how-it-works")({
   head: () => ({
@@ -19,55 +20,26 @@ export const Route = createFileRoute("/how-it-works")({
   component: How,
 });
 
-const STEPS = [
-  {
-    t: "Post an RFQ",
-    d: "Describe your product in one structured request: specs, materials, quantity, target price, packaging and timeline. Pick a sourcing hub — or leave it open and let every relevant hub see it.",
-    detail: "Takes about 3 minutes. No account needed to post.",
-  },
-  {
-    t: "Get quotes",
-    d: "Verified suppliers in matching hubs and categories respond with a unit price, a lead time and a short note — always in the same format, so offers are easy to compare side by side.",
-    detail: "Quotes land in your dashboard, with the best price and fastest lead time marked.",
-  },
-  {
-    t: "Source smart",
-    d: "Compare factories across countries on cost, lead time and certifications, then contact the one that fits. No platform fee, no middleman — you deal with the factory directly.",
-    detail: "You keep every quote in your dashboard and decide in your own time.",
-  },
-];
-
-const SIDES = [
-  {
-    t: "For buyers",
-    items: [
-      "One RFQ reaches multiple countries at once",
-      "Verified factories only — no resellers, no fake profiles",
-      "Quotes in a comparable format, best price highlighted",
-      "Free: no posting fee, no commission",
-    ],
-  },
-  {
-    t: "For suppliers",
-    items: [
-      "Get matched RFQs in your category and region",
-      "No ads, no pay-to-win ranking",
-      "A verified badge after a human review",
-      "Apply once, reach buyers worldwide",
-    ],
-  },
-];
-
 function How() {
+  const { t } = useI18n();
+  const steps = [
+    { t: t("ft.postRfq"), d: t("how.s1d"), detail: t("how.s1x") },
+    { t: t("how.s2t"), d: t("how.s2d"), detail: t("how.s2x") },
+    { t: t("how.s3t"), d: t("how.s3d"), detail: t("how.s3x") },
+  ];
+  const sides = [
+    { t: t("ft.buyers"), items: [t("how.b1"), t("how.b2"), t("how.b3"), t("how.b4")] },
+    { t: t("ft.suppliers"), items: [t("how.f1"), t("how.f2"), t("how.f3"), t("how.f4")] },
+  ];
   return (
     <>
-      <PageHeader eyebrow="Process" title="How SOURCEX Works">
-        Three steps between your product idea and a factory that can actually make it.
+      <PageHeader eyebrow={t("how.eyebrow")} title={t("how.title")}>
+        {t("how.lead")}
       </PageHeader>
       <div className="container-page py-14">
         <div className="grid gap-4 md:grid-cols-3">
-          {STEPS.map((s, i) => (
-            <div key={s.t} className="flex flex-col rounded-xl border bg-card p-8">
+          {steps.map((s, i) => (
+            <div key={i} className="flex flex-col rounded-xl border bg-card p-8">
               <span className="font-mono text-3xl font-semibold text-primary">0{i + 1}</span>
               <h2 className="mt-6 text-xl font-semibold">{s.t}</h2>
               <p className="mt-2 flex-1 text-sm text-muted-foreground">{s.d}</p>
@@ -77,12 +49,12 @@ function How() {
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
-          {SIDES.map((s) => (
-            <div key={s.t} className="rounded-xl border bg-card p-8">
+          {sides.map((s, i) => (
+            <div key={i} className="rounded-xl border bg-card p-8">
               <h3 className="text-lg font-semibold">{s.t}</h3>
               <ul className="mt-4 space-y-2">
-                {s.items.map((it) => (
-                  <li key={it} className="flex items-start gap-2 text-sm text-muted-foreground">
+                {s.items.map((it, j) => (
+                  <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />{it}
                   </li>
                 ))}
@@ -92,13 +64,12 @@ function How() {
         </div>
 
         <div className="mt-10 rounded-xl border bg-subtle p-6 text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">Honest beta note:</span> the directory only shows factories
-          that applied and passed review. If a hub looks empty, it is — and the first verified factory there could be yours.
+          <span className="font-semibold text-foreground">{t("how.noteLead")}</span> {t("how.note")}
         </div>
 
         <div className="mt-10 flex flex-wrap justify-center gap-2">
-          <Button asChild size="lg"><Link to="/rfq">Post an RFQ</Link></Button>
-          <Button asChild size="lg" variant="outline"><Link to="/become-a-supplier">Become a supplier</Link></Button>
+          <Button asChild size="lg"><Link to="/rfq">{t("ft.postRfq")}</Link></Button>
+          <Button asChild size="lg" variant="outline"><Link to="/become-a-supplier">{t("ft.become")}</Link></Button>
         </div>
       </div>
     </>

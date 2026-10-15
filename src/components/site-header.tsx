@@ -63,15 +63,15 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 print:hidden border-b bg-background/90 backdrop-blur">
       <div className="container-page flex h-16 items-center justify-between gap-6">
-        <div className="flex items-center gap-10">
+        <div className="flex items-center gap-6 xl:gap-10">
           <Logo />
-          <nav className="hidden items-center gap-7 md:flex">
+          <nav className="hidden items-center gap-5 xl:gap-7 lg:flex">
             {NAV.map((n) => (
               <Link
                 key={n.to}
                 to={n.to}
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                activeProps={{ className: "text-sm font-medium text-foreground" }}
+                className="whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground"
+                activeProps={{ className: "whitespace-nowrap text-sm font-medium text-foreground" }}
               >
                 {t(n.key)}
               </Link>
@@ -106,7 +106,7 @@ export function SiteHeader() {
         </div>
         {signedIn && <NotificationBell />}
         <button
-          className="md:hidden"
+          className="lg:hidden"
           aria-label={open ? t("hdr.closeMenu") : t("hdr.openMenu")}
           onClick={() => setOpen((v) => !v)}
         >
@@ -115,7 +115,7 @@ export function SiteHeader() {
         </div>
       </div>
       {open && (
-        <div className="border-t md:hidden">
+        <div className="border-t lg:hidden">
           <nav className="container-page flex flex-col py-3">
             {NAV.map((n) => (
               <Link key={n.to} to={n.to} onClick={() => setOpen(false)} className="py-2 text-sm">

@@ -4,6 +4,15 @@ import { CountryCard, PageHeader } from "@/components/blocks";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { HubMap, type HubCount } from "@/components/hub-map";
+import { useI18n } from "@/lib/i18n";
+import type { Key } from "@/lib/translations";
+
+const REGION_KEY: Record<string, Key> = {
+  "Asia": "region.asia",
+  "Europe": "region.europe",
+  "Americas": "region.americas",
+  "MENA & Africa": "region.mena",
+};
 
 export const Route = createFileRoute("/hubs")({
   head: () => ({
@@ -23,6 +32,7 @@ export const Route = createFileRoute("/hubs")({
 
 
 function Hubs() {
+  const { t } = useI18n();
   // Real data only: approved factories are the only rows visible to the public (RLS), grouped by country.
   const { data: hubs, isLoading } = useQuery({
     queryKey: ["hub-map"],
@@ -36,19 +46,19 @@ function Hubs() {
   });
   return (
     <>
-      <PageHeader eyebrow="Explore by region" title="Country Hubs">
-        Each hub groups manufacturing capability by country. Explore verified suppliers by region.
+      <PageHeader eyebrow={t("hubs.eyebrow")} title={t("nav.hubs")}>
+        {t("hubs.lead")}
       </PageHeader>
       <div className="container-page space-y-12 py-14">
         <section aria-labelledby="hub-map-h">
-          <h2 id="hub-map-h" className="mb-4 text-sm font-semibold text-muted-foreground">Where approved factories are</h2>
+          <h2 id="hub-map-h" className="mb-4 text-sm font-semibold text-muted-foreground">{t("hubs.mapTitle")}</h2>
           {isLoading ? <div className="h-64 animate-pulse rounded-xl border bg-muted/30" /> : <HubMap hubs={hubs ?? []} />}
         </section>
         {REGIONS.map((r) => {
           const regionHubs = COUNTRIES.filter((c) => c.region === r);
           return (
             <section key={r}>
-              <h2 className="mb-4 text-sm font-semibold text-muted-foreground">{r} · {regionHubs.length} hubs</h2>
+              <h2 className="mb-4 text-sm font-semibold text-muted-foreground">{REGION_KEY[r] ? t(REGION_KEY[r]) : r} · {t("hubs.countLabel")}: {regionHubs.length}</h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {regionHubs.map((c) => <CountryCard key={c.slug} c={c} />)}
               </div>
