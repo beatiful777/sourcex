@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
+import { useI18n, fmt } from "@/lib/i18n";
 
-type Item = { id: string; text: string; to: "/dashboard" | "/supplier/rfqs"; at: number };
+type Item = { id: string; kind: "quote" | "accepted" | "approved" | "rejected"; product?: string; company?: string; to: "/dashboard" | "/supplier/rfqs"; at: number };
 
 // Notifications are derived from existing data (quotes received, quotes accepted,
 // supplier application decisions). "Seen" ids are kept in this browser only.
@@ -37,7 +38,9 @@ async function loadItems(uid: string): Promise<Item[]> {
     for (const a of r.rfq_applications ?? []) {
       items.push({
         id: `q:${a.id}`,
-        text: `New quote on "${r.product}" from ${a.company_name || "a factory"}`,
+        kind: "quote",
+        product: r.product,
+        company: a.company_name ?? "",
         to: "/dashboard",
         at: Date.parse(a.created_at) || 0,
       });
@@ -56,7 +59,8 @@ async function loadItems(uid: string): Promise<Item[]> {
     for (const a of mine) {
       items.push({
         id: `acc:${a.id}`,
-        text: `Your quote on "${product.get(a.id) ?? "an RFQ"}" was accepted`,
+        kind: "accepted",
+        product: product.get(a.id) ?? "",
         to: "/supplier/rfqs",
         at: Date.parse(a.updated_at) || 0,
       });
@@ -72,7 +76,8 @@ async function loadItems(uid: string): Promise<Item[]> {
     if (s.status === "approved" || s.status === "rejected") {
       items.push({
         id: `sa:${s.id}:${s.status}`,
-        text: `Your supplier application for ${s.company_name} was ${s.status}`,
+        kind: s.status === "approved" ? "approved" : "rejected",
+        company: s.company_name ?? "",
         to: s.status === "approved" ? "/supplier/rfqs" : "/dashboard",
         at: Number.MAX_SAFE_INTEGER - 1,
       });
@@ -83,6 +88,13 @@ async function loadItems(uid: string): Promise<Item[]> {
 }
 
 export function NotificationBell() {
+  const { t } = useI18n();
+  const label = (i: Item) =>
+    i.kind === "quote"
+      ? fmt(t("nt.quote"), { product: i.product ?? "", company: i.company || t("nt.aFactory") })
+      : i.kind === "accepted"
+        ? fmt(t("nt.accepted"), { product: i.product || t("nt.anRfq") })
+        : fmt(t(i.kind === "approved" ? "nt.approved" : "nt.rejected"), { company: i.company ?? "" });
   const [uid, setUid] = useState<string | null>(null);
   const [seen, setSeen] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false);
@@ -132,7 +144,7 @@ export function NotificationBell() {
       }}
     >
       <PopoverTrigger asChild>
-        <button className="relative grid h-9 w-9 place-items-center rounded-md hover:bg-muted" aria-label="Notifications">
+        <button className="relative grid h-9 w-9 place-items-center rounded-md hover:bg-muted" aria-label={t("nt.title")}>
           <Bell className="h-5 w-5" />
           {unread.length > 0 && (
             <span className="absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
@@ -142,9 +154,9 @@ export function NotificationBell() {
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
-        <div className="border-b px-4 py-3 text-sm font-semibold">Notifications</div>
+        <div className="border-b px-4 py-3 text-sm font-semibold">{t("nt.title")}</div>
         {!items?.length ? (
-          <p className="px-4 py-6 text-center text-sm text-muted-foreground">Nothing new yet.</p>
+          <p className="px-4 py-6 text-center text-sm text-muted-foreground">{t("nt.empty")}</p>
         ) : (
           <ul className="max-h-80 divide-y overflow-y-auto">
             {items.map((i) => (
@@ -155,7 +167,7 @@ export function NotificationBell() {
                   className="flex gap-2 px-4 py-3 text-sm hover:bg-muted"
                 >
                   {!seen.has(i.id) && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />}
-                  <span>{i.text}</span>
+                  <span>{label(i)}</span>
                 </Link>
               </li>
             ))}

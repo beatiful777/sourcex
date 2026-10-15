@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { BuyerSamples } from "@/components/sample-lists";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { acceptQuoteFn } from "@/lib/notifications.functions";
+import { useI18n, fmt } from "@/lib/i18n";
+import { useNames } from "@/lib/names";
+import { useStatus } from "@/lib/status";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -47,6 +50,9 @@ function minOf(xs: (number | null)[]) {
 }
 
 function Dashboard() {
+  const { t } = useI18n();
+  const names = useNames();
+  const st = useStatus();
   const { user } = Route.useRouteContext();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -82,8 +88,8 @@ function Dashboard() {
   async function toggleStatus(rfqId: string, status: string) {
     const next = status === "open" ? "closed" : "open";
     const { error } = await supabase.from("rfqs").update({ status: next }).eq("id", rfqId);
-    if (error) { toast.error("Couldn't update RFQ"); return; }
-    toast.success(next === "closed" ? "RFQ closed" : "RFQ re-opened");
+    if (error) { toast.error(t("db.updFail")); return; }
+    toast.success(next === "closed" ? t("db.closedOk") : t("db.reopenedOk"));
     qc.invalidateQueries({ queryKey: ["my-rfqs"] });
   }
 
@@ -91,62 +97,62 @@ function Dashboard() {
 
   async function extendRfq(rfqId: string, days: number) {
     const { error } = await supabase.rpc("extend_rfq", { _rfq: rfqId, _days: days });
-    if (error) { toast.error("Couldn't extend", { description: error.message }); return; }
-    toast.success(`Extended by ${days} days`);
+    if (error) { toast.error(t("db.extFail"), { description: error.message }); return; }
+    toast.success(fmt(t("db.extended"), { n: days }));
     qc.invalidateQueries({ queryKey: ["my-rfqs"] });
   }
 
   async function acceptQuote(quoteId: string, accepted: boolean) {
     try {
       const { email } = await acceptQuoteFn({ data: { quoteId, accepted } });
-      toast.success(accepted ? "Quote accepted" : "Selection removed", {
-        description: !accepted ? undefined : email === "sent" ? "We emailed you and the factory." : email === "not_configured" ? "Email notifications are not configured yet." : email === "failed" ? "Saved, but the notification email could not be sent." : undefined,
+      toast.success(accepted ? t("db.accOk") : t("db.accUndo"), {
+        description: !accepted ? undefined : email === "sent" ? t("db.emailSent") : email === "not_configured" ? t("db.emailNC") : email === "failed" ? t("db.emailFail") : undefined,
       });
     } catch (e) {
-      toast.error("Couldn't update the quote", { description: e instanceof Error ? e.message : undefined });
+      toast.error(t("db.accFail"), { description: e instanceof Error ? e.message : undefined });
       return;
     }
     qc.invalidateQueries({ queryKey: ["my-rfqs"] });
   }
 
   async function deleteRfq(rfqId: string) {
-    if (!confirm("Delete this RFQ and all its applications?")) return;
+    if (!confirm(t("db.confirmDel"))) return;
     const { error } = await supabase.from("rfqs").delete().eq("id", rfqId);
-    if (error) { toast.error("Couldn't delete RFQ"); return; }
-    toast.success("RFQ deleted");
+    if (error) { toast.error(t("db.delFail")); return; }
+    toast.success(t("db.deleted"));
     qc.invalidateQueries({ queryKey: ["my-rfqs"] });
   }
 
   async function copyEmail(email: string) {
     try {
       await navigator.clipboard.writeText(email);
-      toast.success("Email copied", { description: email });
+      toast.success(t("db.copied"), { description: email });
     } catch {
-      toast.error("Couldn't copy", { description: email });
+      toast.error(t("db.copyFail"), { description: email });
     }
   }
 
   return (
     <>
-      <PageHeader eyebrow={user.email ?? "Account"} title="Dashboard">
-        Requests you've posted, offers you've received and quotes you've sent.
+      <PageHeader eyebrow={user.email ?? t("db.account")} title={t("db.title")}>
+        {t("db.lead")}
       </PageHeader>
       <div className="container-page py-12">
         <div className="mb-6 flex flex-wrap justify-between gap-2">
           <div className="flex flex-wrap gap-2">
-            <Button asChild size="sm"><Link to="/rfq">New RFQ</Link></Button>
-            <Button asChild size="sm" variant="outline"><Link to="/open-rfqs">Browse open RFQs (suppliers)</Link></Button>
-            <Button asChild size="sm" variant="outline"><Link to="/become-a-supplier">Apply as a supplier</Link></Button>
-            <Button asChild size="sm" variant="outline"><Link to="/supplier/profile">Factory profile</Link></Button>
+            <Button asChild size="sm"><Link to="/rfq">{t("db.newRfq")}</Link></Button>
+            <Button asChild size="sm" variant="outline"><Link to="/open-rfqs">{t("db.browseSup")}</Link></Button>
+            <Button asChild size="sm" variant="outline"><Link to="/become-a-supplier">{t("bl.apply")}</Link></Button>
+            <Button asChild size="sm" variant="outline"><Link to="/supplier/profile">{t("db.factoryProfile")}</Link></Button>
           </div>
-          <Button variant="outline" size="sm" onClick={signOut}>Sign out</Button>
+          <Button variant="outline" size="sm" onClick={signOut}>{t("db.signOut")}</Button>
         </div>
 
         <div className="mb-8 grid gap-3 sm:grid-cols-3">
           {[
-            ["Active RFQs", data?.filter((r) => r.status === "open" && !isExpired(r)).length ?? 0],
-            ["Quotes received", data?.reduce((n, r) => n + r.rfq_applications.length, 0) ?? 0],
-            ["Quotes I sent", quotes?.length ?? 0],
+            [t("db.active"), data?.filter((r) => r.status === "open" && !isExpired(r)).length ?? 0],
+            [t("db.received"), data?.reduce((n, r) => n + r.rfq_applications.length, 0) ?? 0],
+            [t("db.sent"), quotes?.length ?? 0],
           ].map(([label, value]) => (
             <div key={label as string} className="rounded-xl border p-4">
               <p className="text-xs text-muted-foreground">{label}</p>
@@ -157,17 +163,17 @@ function Dashboard() {
 
         <Tabs defaultValue="rfqs">
           <TabsList>
-            <TabsTrigger value="rfqs">My RFQs (Buyer)</TabsTrigger>
-            <TabsTrigger value="quotes">My Submitted Quotes (Supplier)</TabsTrigger>
-            <TabsTrigger value="samples">Samples</TabsTrigger>
+            <TabsTrigger value="rfqs">{t("db.tabRfqs")}</TabsTrigger>
+            <TabsTrigger value="quotes">{t("db.tabQuotes")}</TabsTrigger>
+            <TabsTrigger value="samples">{t("db.tabSamples")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="rfqs" className="mt-6">
             {isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
+              <p className="text-sm text-muted-foreground">{t("c.loading")}</p>
             ) : !data?.length ? (
               <div className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-                No RFQs yet. Post your first one to get started.
+                {t("db.none")}
               </div>
             ) : (
               <div className="grid gap-4">
@@ -176,36 +182,36 @@ function Dashboard() {
                     <div className="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="font-medium">{r.product}</p>
-                        <p className="text-xs text-muted-foreground">{r.category} · {r.country || "Any country"} · {r.quantity}</p>
+                        <p className="text-xs text-muted-foreground">{names.category(r.category)} · {r.country ? names.country(r.country) : t("rfq.anyCountry")} · {r.quantity}</p>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="rounded-full border px-2 py-0.5">{r.rfq_applications.length} application{r.rfq_applications.length === 1 ? "" : "s"}</span>
+                        <span className="rounded-full border px-2 py-0.5">{fmt(t("db.apps"), { n: r.rfq_applications.length })}</span>
                         {isExpired(r) ? (
-                          <span className="rounded-full border border-destructive/50 px-2 py-0.5 font-medium text-destructive">Expired</span>
+                          <span className="rounded-full border border-destructive/50 px-2 py-0.5 font-medium text-destructive">{t("db.expired")}</span>
                         ) : (
-                          <span className="rounded-full border px-2 py-0.5 capitalize">{r.status === "in_progress" ? "In progress" : r.status}</span>
+                          <span className="rounded-full border px-2 py-0.5 capitalize">{st(r.status)}</span>
                         )}
-                        {r.respond_by && r.status === "open" && !isExpired(r) && <span>answers by {new Date(r.respond_by).toLocaleDateString()}</span>}
+                        {r.respond_by && r.status === "open" && !isExpired(r) && <span>{fmt(t("db.answersBy"), { d: new Date(r.respond_by).toLocaleDateString() })}</span>}
                         {new Date(r.created_at).toLocaleDateString()}
                         {(r.status === "open" || r.status === "closed") && (
                           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => toggleStatus(r.id, r.status)}>
-                            {r.status === "open" ? "Close RFQ" : "Re-open"}
+                            {r.status === "open" ? t("db.close") : t("db.reopen")}
                           </Button>
                         )}
                         {(r.status === "open" || r.status === "closed") && r.respond_by && (
-                          <select aria-label="Extend deadline" className="h-7 rounded-md border bg-background px-1 text-xs" value="" onChange={(e) => e.target.value && extendRfq(r.id, Number(e.target.value))}>
-                            <option value="">{isExpired(r) ? "Extend…" : "Extend by…"}</option><option value="7">+7 days</option><option value="14">+14 days</option><option value="30">+30 days</option>
+                          <select aria-label={t("db.extendLabel")} className="h-7 rounded-md border bg-background px-1 text-xs" value="" onChange={(e) => e.target.value && extendRfq(r.id, Number(e.target.value))}>
+                            <option value="">{isExpired(r) ? t("db.extendE") : t("db.extendBy")}</option><option value="7">{fmt(t("db.plusDays"), { n: 7 })}</option><option value="14">{fmt(t("db.plusDays"), { n: 14 })}</option><option value="30">{fmt(t("db.plusDays"), { n: 30 })}</option>
                           </select>
                         )}
-                        <Button asChild size="sm" variant="outline" className="h-7 text-xs"><Link to="/rfq-print/$id" params={{ id: r.id }}>Print RFQ</Link></Button>
+                        <Button asChild size="sm" variant="outline" className="h-7 text-xs"><Link to="/rfq-print/$id" params={{ id: r.id }}>{t("db.print")}</Link></Button>
                         <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={() => deleteRfq(r.id)}>
-                          Delete
+                          {t("db.delete")}
                         </Button>
                       </div>
                     </div>
                     {r.rfq_applications.length === 0 ? (
                       <div className="border-t bg-muted/30 p-4 text-xs text-muted-foreground">
-                        Your request is live for verified factories. Quotes will appear here.
+                        {t("db.live")}
                       </div>
                     ) : (() => {
                       const prices = r.rfq_applications.map((a) => num(a.unit_price));
@@ -218,39 +224,39 @@ function Dashboard() {
                             <div key={a.id} className="grid gap-2 rounded-lg border bg-background p-4 text-sm">
                               <div className="flex flex-wrap items-center gap-2">
                                 <p className="font-medium">{a.company_name}</p>
-                                {a.status === "accepted" && <span className="rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-semibold text-white">Accepted</span>}
+                                {a.status === "accepted" && <span className="rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-semibold text-white">{t("st.accepted")}</span>}
                                 {best !== null && prices[i] === best && r.rfq_applications.length > 1 && (
-                                  <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">Best price</span>
+                                  <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">{t("db.bestPrice")}</span>
                                 )}
                                 {fast !== null && times[i] === fast && r.rfq_applications.length > 1 && (
-                                  <span className="rounded-full border border-primary px-2 py-0.5 text-[10px] font-semibold text-primary">Fastest</span>
+                                  <span className="rounded-full border border-primary px-2 py-0.5 text-[10px] font-semibold text-primary">{t("db.fastest")}</span>
                                 )}
                               </div>
                               <div className="grid grid-cols-3 gap-2">
                                 <div className="rounded-md border p-2">
-                                  <p className="text-[10px] uppercase text-muted-foreground">Unit price</p>
-                                  <p className="font-semibold">{a.unit_price || "On request"}</p>
+                                  <p className="text-[10px] uppercase text-muted-foreground">{t("db.unitPrice")}</p>
+                                  <p className="font-semibold">{a.unit_price || t("fp.onRequest")}</p>
                                 </div>
                                 <div className="rounded-md border p-2">
-                                  <p className="text-[10px] uppercase text-muted-foreground">Lead time</p>
-                                  <p className="font-semibold">{a.lead_time || "Not given"}</p>
+                                  <p className="text-[10px] uppercase text-muted-foreground">{t("db.leadTime")}</p>
+                                  <p className="font-semibold">{a.lead_time || t("db.notGiven")}</p>
                                 </div>
                                 <div className="rounded-md border p-2">
-                                  <p className="text-[10px] uppercase text-muted-foreground">Min. order</p>
-                                  <p className="font-semibold">{a.min_order || "Not given"}</p>
+                                  <p className="text-[10px] uppercase text-muted-foreground">{t("db.minOrder")}</p>
+                                  <p className="font-semibold">{a.min_order || t("db.notGiven")}</p>
                                 </div>
                               </div>
                               <p className="whitespace-pre-line text-muted-foreground">{a.message}</p>
                               <div className="flex flex-wrap items-center gap-2">
                                 {a.status === "accepted" ? (
-                                  <Button size="sm" variant="outline" className="h-8" onClick={() => acceptQuote(a.id, false)}>Undo accept</Button>
+                                  <Button size="sm" variant="outline" className="h-8" onClick={() => acceptQuote(a.id, false)}>{t("db.undo")}</Button>
                                 ) : (
-                                  <Button size="sm" className="h-8" disabled={r.status === "closed"} onClick={() => acceptQuote(a.id, true)}>Accept quote</Button>
+                                  <Button size="sm" className="h-8" disabled={r.status === "closed"} onClick={() => acceptQuote(a.id, true)}>{t("db.accept")}</Button>
                                 )}
                                 <Button size="sm" variant="outline" className="h-8" asChild>
-                                  <a href={`mailto:${a.supplier_email}?subject=${encodeURIComponent(`Re: RFQ — ${r.product}`)}`}><Mail className="mr-1 h-3 w-3" />Contact factory</a>
+                                  <a href={`mailto:${a.supplier_email}?subject=${encodeURIComponent(`Re: RFQ — ${r.product}`)}`}><Mail className="mr-1 h-3 w-3" />{t("db.contact")}</a>
                                 </Button>
-                                <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => copyEmail(a.supplier_email)}><Copy className="mr-1 h-3 w-3" />Copy email</Button>
+                                <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => copyEmail(a.supplier_email)}><Copy className="mr-1 h-3 w-3" />{t("db.copyEmail")}</Button>
                                 <span className="ml-auto text-[10px] text-muted-foreground">{new Date(a.created_at).toLocaleDateString()}</span>
                               </div>
                             </div>
@@ -266,11 +272,11 @@ function Dashboard() {
 
           <TabsContent value="quotes" className="mt-6">
             {quotesLoading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
+              <p className="text-sm text-muted-foreground">{t("c.loading")}</p>
             ) : !quotes?.length ? (
               <div className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-                You haven't sent a quote yet.{" "}
-                <Link to="/open-rfqs" className="underline">Browse open RFQs</Link> and submit your price and lead time.
+                {t("db.noQuotes1")}{" "}
+                <Link to="/open-rfqs" className="underline">{t("ft.browseRfqs")}</Link> {t("db.noQuotes2")}
               </div>
             ) : (
               <div className="grid gap-4">
@@ -280,13 +286,13 @@ function Dashboard() {
                       <div>
                         <p className="font-medium">{q.product}</p>
                         <p className="text-xs text-muted-foreground">
-                          {[q.category, q.country, q.quantity].filter(Boolean).join(" · ")}
+                          {[q.category ? names.category(q.category) : null, q.country ? names.country(q.country) : null, q.quantity].filter(Boolean).join(" · ")}
                         </p>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="rounded-full border px-2 py-0.5">{q.unit_price || "Price on request"}</span>
-                        <span className="rounded-full border px-2 py-0.5">{q.lead_time || "Lead time not given"}</span>
-                        <span className="rounded-full border px-2 py-0.5 capitalize">RFQ {q.rfq_status === "in_progress" ? "in progress" : q.rfq_status}</span>
+                        <span className="rounded-full border px-2 py-0.5">{q.unit_price || t("db.priceOnReq")}</span>
+                        <span className="rounded-full border px-2 py-0.5">{q.lead_time || t("db.leadNotGiven")}</span>
+                        <span className="rounded-full border px-2 py-0.5 capitalize">{fmt(t("db.rfqStatus"), { s: st(q.rfq_status) })}</span>
                         {new Date(q.applied_at).toLocaleDateString()}
                       </div>
                     </div>

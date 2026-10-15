@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/blocks";
 import { Button } from "@/components/ui/button";
+import { useI18n, fmt } from "@/lib/i18n";
+import { useNames } from "@/lib/names";
 
 export const Route = createFileRoute("/_authenticated/open-rfqs")({
   head: () => ({
@@ -19,6 +21,8 @@ export const Route = createFileRoute("/_authenticated/open-rfqs")({
 });
 
 function OpenRfqs() {
+  const { t } = useI18n();
+  const names = useNames();
   const { user } = Route.useRouteContext();
   const { data, isLoading } = useQuery({
     queryKey: ["open-rfqs", user.id],
@@ -35,14 +39,14 @@ function OpenRfqs() {
 
   return (
     <>
-      <PageHeader eyebrow="For suppliers" title="Open RFQs">
-        Buyers are looking for these products. Verified factories send their quote in the RFQ Desk.
+      <PageHeader eyebrow={t("or.eyebrow")} title={t("or.title")}>
+        {t("or.lead")}
       </PageHeader>
       <div className="container-page py-12">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p className="text-sm text-muted-foreground">{t("c.loading")}</p>
         ) : !data?.length ? (
-          <div className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">No open RFQs right now. Check back soon.</div>
+          <div className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">{t("or.none")}</div>
         ) : (
           <div className="grid gap-4">
             {data.map((r) => (
@@ -50,15 +54,15 @@ function OpenRfqs() {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="font-medium">{r.product}</p>
-                    <p className="text-xs text-muted-foreground">{r.category} · {r.country || "Any country"} · {r.quantity} · {new Date(r.created_at).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground">{names.category(r.category)} · {r.country ? names.country(r.country) : t("rfq.anyCountry")} · {r.quantity} · {new Date(r.created_at).toLocaleDateString()}</p>
                     {r.details && <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">{r.details}</p>}
                   </div>
                   {r.is_mine ? (
-                    <span className="text-xs text-muted-foreground">Your RFQ</span>
+                    <span className="text-xs text-muted-foreground">{t("or.mine")}</span>
                   ) : r.applied ? (
-                    <span className="rounded-full border px-2 py-0.5 text-xs">Quoted</span>
+                    <span className="rounded-full border px-2 py-0.5 text-xs">{t("or.quoted")}</span>
                   ) : (
-                    <Button asChild size="sm" variant="outline"><Link to="/supplier/rfqs">Quote in RFQ Desk</Link></Button>
+                    <Button asChild size="sm" variant="outline"><Link to="/supplier/rfqs">{t("or.quote")}</Link></Button>
                   )}
                 </div>
               </div>

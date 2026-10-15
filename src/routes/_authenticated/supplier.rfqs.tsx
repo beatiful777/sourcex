@@ -11,6 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { FactorySamples } from "@/components/sample-lists";
 import { submitQuoteFn } from "@/lib/notifications.functions";
 import { RfqFiles } from "@/components/rfq-files";
+import { useI18n, fmt } from "@/lib/i18n";
+import { useNames } from "@/lib/names";
+import { useStatus } from "@/lib/status";
 
 export const Route = createFileRoute("/_authenticated/supplier/rfqs")({
   head: () => ({
@@ -33,6 +36,9 @@ type Row = {
 };
 
 function Desk() {
+  const { t } = useI18n();
+  const names = useNames();
+  const st = useStatus();
   const qc = useQueryClient();
   const [openId, setOpenId] = useState<string | null>(null);
   const supplier = useQuery({
@@ -53,27 +59,27 @@ function Desk() {
     },
   });
 
-  if (supplier.isLoading) return <div className="container-page py-12 text-sm text-muted-foreground">Loading…</div>;
+  if (supplier.isLoading) return <div className="container-page py-12 text-sm text-muted-foreground">{t("c.loading")}</div>;
   if (!supplier.data)
     return (
       <div className="container-page py-16 text-center">
-        <h1 className="text-2xl font-semibold">RFQ Desk is for verified factories</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Your factory needs an approved application to quote.</p>
-        <Button asChild className="mt-6"><Link to="/become-a-supplier">Apply as a supplier</Link></Button>
+        <h1 className="text-2xl font-semibold">{t("dk.deny")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{t("dk.denyD")}</p>
+        <Button asChild className="mt-6"><Link to="/become-a-supplier">{t("bl.apply")}</Link></Button>
       </div>
     );
 
   return (
     <>
-      <PageHeader eyebrow={supplier.data.company_name} title="RFQ Desk">
-        Open requests in your categories: {supplier.data.categories.join(", ") || "—"}. One quote per RFQ; you can edit it until the buyer accepts.{" "}
-        <Link to="/supplier/profile" className="underline">Edit factory profile</Link>
+      <PageHeader eyebrow={supplier.data.company_name} title={t("dk.title")}>
+        {fmt(t("dk.lead"), { cats: supplier.data.categories.map((c) => names.category(c)).join(", ") || "—" })}{" "}
+        <Link to="/supplier/profile" className="underline">{t("dk.editProfile")}</Link>
       </PageHeader>
       <div className="container-page py-12">
         {rfqs.isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p className="text-sm text-muted-foreground">{t("c.loading")}</p>
         ) : !rfqs.data?.length ? (
-          <div className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">No open RFQs in your categories right now.</div>
+          <div className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">{t("dk.none")}</div>
         ) : (
           <div className="grid gap-4">
             {rfqs.data.map((r) => {
@@ -83,16 +89,16 @@ function Desk() {
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="font-medium">{r.product}</p>
-                      <p className="text-xs text-muted-foreground">{r.category} · {r.country || "Any country"} · {r.quantity} · {new Date(r.created_at).toLocaleDateString()}</p>
+                      <p className="text-xs text-muted-foreground">{names.category(r.category)} · {r.country ? names.country(r.country) : t("rfq.anyCountry")} · {r.quantity} · {new Date(r.created_at).toLocaleDateString()}</p>
                       {r.details && <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">{r.details}</p>}
                       <RfqFiles rfqId={r.id} />
                       {r.quote_id && (
-                        <p className="mt-2 text-xs">Your quote: {r.unit_price || "—"} · {r.lead_time || "—"} · MOQ {r.min_order || "—"} · <b>{r.quote_status}</b></p>
+                        <p className="mt-2 text-xs">{t("dk.yourQuote")} {r.unit_price || "—"} · {r.lead_time || "—"} · {t("dk.moq")} {r.min_order || "—"} · <b>{st(r.quote_status)}</b></p>
                       )}
                     </div>
                     {!accepted && (
                       <Button size="sm" variant={openId === r.id ? "outline" : "default"} onClick={() => setOpenId(openId === r.id ? null : r.id)}>
-                        {openId === r.id ? "Cancel" : r.quote_id ? "Edit quote" : "Send quote"}
+                        {openId === r.id ? t("dk.cancel") : r.quote_id ? t("dk.edit") : t("dk.send")}
                       </Button>
                     )}
                   </div>
@@ -111,6 +117,7 @@ function Desk() {
 }
 
 function QuoteForm({ row, onDone }: { row: Row; onDone: () => void }) {
+  const { t } = useI18n();
   const [price, setPrice] = useState(row.unit_price ?? "");
   const [leadN, setLeadN] = useState(row.lead_time?.match(/\d+/)?.[0] ?? "");
   const [unit, setUnit] = useState(row.lead_time?.includes("week") ? "weeks" : "days");
@@ -120,7 +127,7 @@ function QuoteForm({ row, onDone }: { row: Row; onDone: () => void }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!price.trim() || !leadN.trim() || msg.trim().length < 1) { toast.error("Fill price, lead time and message"); return; }
+    if (!price.trim() || !leadN.trim() || msg.trim().length < 1) { toast.error(t("dk.fill")); return; }
     setBusy(true);
     let email = "skipped";
     try {
@@ -129,29 +136,29 @@ function QuoteForm({ row, onDone }: { row: Row; onDone: () => void }) {
       }));
     } catch (err) {
       setBusy(false);
-      toast.error(err instanceof Error ? err.message : "Couldn't save the quote");
+      toast.error(err instanceof Error ? err.message : t("dk.saveFail"));
       return;
     }
     setBusy(false);
-    toast.success(row.quote_id ? "Quote updated" : "Quote sent", { description: email === "sent" ? "The buyer was notified by email." : undefined });
+    toast.success(row.quote_id ? t("dk.updated") : t("dk.sentOk"), { description: email === "sent" ? t("dk.buyerNotified") : undefined });
     onDone();
   }
 
   return (
     <form onSubmit={submit} className="mt-4 grid gap-3 border-t pt-4 sm:grid-cols-2">
-      <div><Label>Price per unit</Label><Input value={price} maxLength={40} onChange={(e) => setPrice(e.target.value)} placeholder="$4.20" /></div>
+      <div><Label>{t("calc.unit")}</Label><Input value={price} maxLength={40} onChange={(e) => setPrice(e.target.value)} placeholder="$4.20" /></div>
       <div>
-        <Label>Lead time</Label>
+        <Label>{t("db.leadTime")}</Label>
         <div className="flex gap-2">
           <Input type="number" min={1} value={leadN} onChange={(e) => setLeadN(e.target.value)} />
           <select className="rounded-md border bg-background px-2 text-sm" value={unit} onChange={(e) => setUnit(e.target.value)}>
-            <option value="days">days</option><option value="weeks">weeks</option>
+            <option value="days">{t("dk.days")}</option><option value="weeks">{t("dk.weeks")}</option>
           </select>
         </div>
       </div>
-      <div><Label>Minimum order</Label><Input value={moq} maxLength={40} onChange={(e) => setMoq(e.target.value)} placeholder="500 pcs" /></div>
-      <div className="sm:col-span-2"><Label>Message</Label><Textarea value={msg} maxLength={2000} onChange={(e) => setMsg(e.target.value)} rows={4} /></div>
-      <div className="sm:col-span-2"><Button type="submit" disabled={busy}>{busy ? "Saving…" : row.quote_id ? "Update quote" : "Send quote"}</Button></div>
+      <div><Label>{t("fp.minOrder")}</Label><Input value={moq} maxLength={40} onChange={(e) => setMoq(e.target.value)} placeholder="500 pcs" /></div>
+      <div className="sm:col-span-2"><Label>{t("dk.message")}</Label><Textarea value={msg} maxLength={2000} onChange={(e) => setMsg(e.target.value)} rows={4} /></div>
+      <div className="sm:col-span-2"><Button type="submit" disabled={busy}>{busy ? t("dk.saving") : row.quote_id ? t("dk.update") : t("dk.send")}</Button></div>
     </form>
   );
 }
