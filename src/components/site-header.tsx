@@ -5,14 +5,17 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import type { Key } from "@/lib/translations";
 
 const NAV = [
-  { to: "/suppliers", label: "Suppliers" },
-  { to: "/open-rfqs", label: "Open RFQs" },
-  { to: "/hubs", label: "Country Hubs" },
-  { to: "/how-it-works", label: "How it works" },
-  { to: "/about", label: "About" },
-] as const;
+  { to: "/suppliers", key: "nav.suppliers" },
+  { to: "/open-rfqs", key: "nav.openRfqs" },
+  { to: "/hubs", key: "nav.hubs" },
+  { to: "/how-it-works", key: "nav.how" },
+  { to: "/about", key: "nav.about" },
+] as const satisfies readonly { to: string; key: Key }[];
 
 export function Logo() {
   return (
@@ -26,6 +29,7 @@ export function Logo() {
 }
 
 export function SiteHeader() {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const navigate = useNavigate();
@@ -69,40 +73,41 @@ export function SiteHeader() {
                 className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 activeProps={{ className: "text-sm font-medium text-foreground" }}
               >
-                {n.label}
+                {t(n.key)}
               </Link>
             ))}
           </nav>
         </div>
         <div className="flex items-center gap-1">
+        <LanguageSwitcher />
         <div className="hidden items-center gap-2 md:flex">
           {signedIn ? (
             <>
               {isSupplier && (
                 <Button asChild variant="ghost" size="sm">
-                  <Link to="/supplier/rfqs">RFQ Desk</Link>
+                  <Link to="/supplier/rfqs">{t("hdr.rfqDesk")}</Link>
                 </Button>
               )}
               <Button asChild variant="outline" size="sm">
-                <Link to="/dashboard">My RFQs</Link>
+                <Link to="/dashboard">{t("hdr.myRfqs")}</Link>
               </Button>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                Sign Out
+                {t("hdr.signOut")}
               </Button>
             </>
           ) : (
             <Button asChild variant="ghost" size="sm">
-              <Link to="/sign-in">Sign In</Link>
+              <Link to="/sign-in">{t("hdr.signIn")}</Link>
             </Button>
           )}
           <Button asChild size="sm">
-            <Link to="/rfq">Post RFQ</Link>
+            <Link to="/rfq">{t("hdr.postRfq")}</Link>
           </Button>
         </div>
         {signedIn && <NotificationBell />}
         <button
           className="md:hidden"
-          aria-label={open ? "Close menu" : "Open menu"}
+          aria-label={open ? t("hdr.closeMenu") : t("hdr.openMenu")}
           onClick={() => setOpen((v) => !v)}
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -114,31 +119,31 @@ export function SiteHeader() {
           <nav className="container-page flex flex-col py-3">
             {NAV.map((n) => (
               <Link key={n.to} to={n.to} onClick={() => setOpen(false)} className="py-2 text-sm">
-                {n.label}
+                {t(n.key)}
               </Link>
             ))}
             {signedIn && isSupplier && (
               <Link to="/supplier/rfqs" onClick={() => setOpen(false)} className="py-2 text-sm font-medium">
-                RFQ Desk
+                {t("hdr.rfqDesk")}
               </Link>
             )}
             {signedIn && (
               <Link to="/dashboard" onClick={() => setOpen(false)} className="py-2 text-sm font-medium">
-                My RFQs
+                {t("hdr.myRfqs")}
               </Link>
             )}
             <div className="mt-3 flex gap-2">
               {signedIn ? (
                 <Button variant="outline" size="sm" className="flex-1" onClick={handleSignOut}>
-                  Sign Out
+                  {t("hdr.signOut")}
                 </Button>
               ) : (
                 <Button asChild variant="outline" size="sm" className="flex-1">
-                  <Link to="/sign-in" onClick={() => setOpen(false)}>Sign In</Link>
+                  <Link to="/sign-in" onClick={() => setOpen(false)}>{t("hdr.signIn")}</Link>
                 </Button>
               )}
               <Button asChild size="sm" className="flex-1">
-                <Link to="/rfq" onClick={() => setOpen(false)}>Post RFQ</Link>
+                <Link to="/rfq" onClick={() => setOpen(false)}>{t("hdr.postRfq")}</Link>
               </Button>
             </div>
           </nav>

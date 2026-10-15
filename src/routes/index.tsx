@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CATEGORIES, filterCountries, categoryName } from "@/lib/catalog";
 import { CountryCard, SuppliersEmpty } from "@/components/blocks";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -40,18 +42,18 @@ function Home() {
       <section className="relative overflow-hidden border-b">
         <div className="grid-bg pointer-events-none absolute inset-0" aria-hidden />
         <div className="container-page relative py-20 text-center md:py-28">
-          <p className="eyebrow">Global B2B Sourcing Hub</p>
+          <p className="eyebrow">{t("home.eyebrow")}</p>
           <h1 className="mx-auto mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-balance md:text-6xl">
-            Source Smarter.
-            <span className="block text-muted-foreground">Global B2B Sourcing Hub</span>
+            {t("home.h1a")}
+            <span className="block text-muted-foreground">{t("home.h1b")}</span>
           </h1>
           <form onSubmit={submit} className="mx-auto mt-10 flex max-w-2xl items-center gap-2 rounded-xl border bg-background p-1.5">
             <Search className="ml-3 h-4 w-4 shrink-0 text-muted-foreground" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search a country, region or category…"
-              aria-label="Search"
+              placeholder={t("home.searchPh")}
+              aria-label={t("home.search")}
               className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
             {query && (
@@ -59,24 +61,24 @@ function Home() {
                 <X className="h-4 w-4" />
               </button>
             )}
-            <Button type="submit" className="h-10 px-5">Search</Button>
+            <Button type="submit" className="h-10 px-5">{t("home.search")}</Button>
           </form>
           <div className="mx-auto mt-8 grid max-w-2xl gap-3 sm:grid-cols-2">
             <Link to="/rfq" className="rounded-xl border bg-background p-4 text-left transition-colors hover:border-primary">
-              <p className="text-sm font-semibold">I'm a buyer</p>
-              <p className="mt-1 text-xs text-muted-foreground">Describe what you need and compare quotes from factories.</p>
-              <span className="mt-3 inline-block text-sm font-medium text-primary">Post an RFQ →</span>
+              <p className="text-sm font-semibold">{t("home.buyer")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("home.buyerDesc")}</p>
+              <span className="mt-3 inline-block text-sm font-medium text-primary">{t("home.buyerCta")}</span>
             </Link>
             <Link to="/become-a-supplier" className="rounded-xl border bg-background p-4 text-left transition-colors hover:border-primary">
-              <p className="text-sm font-semibold">I'm a factory</p>
-              <p className="mt-1 text-xs text-muted-foreground">Apply to be listed and answer buyers' requests in your categories.</p>
-              <span className="mt-3 inline-block text-sm font-medium text-primary">Become a supplier →</span>
+              <p className="text-sm font-semibold">{t("home.factory")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("home.factoryDesc")}</p>
+              <span className="mt-3 inline-block text-sm font-medium text-primary">{t("home.factoryCta")}</span>
             </Link>
           </div>
           <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs text-muted-foreground">
-            Popular:
-            {["Textiles", "Vietnam", "Electronics", "Europe"].map((t) => (
-              <button key={t} onClick={() => setQuery(t)} className="underline-offset-4 hover:text-foreground hover:underline">{t}</button>
+            {t("home.popular")}
+            {([["Textiles", "pop.textiles"], ["Vietnam", "pop.vietnam"], ["Electronics", "pop.electronics"], ["Europe", "pop.europe"]] as const).map(([q, k]) => (
+              <button key={q} onClick={() => setQuery(q)} className="underline-offset-4 hover:text-foreground hover:underline">{t(k)}</button>
             ))}
           </div>
         </div>
@@ -86,9 +88,9 @@ function Home() {
       <section className="container-page py-14">
         <div className="grid gap-6 md:grid-cols-3">
           {[
-            { icon: ShieldCheck, t: "Factories reviewed by hand", d: "Every supplier application is reviewed before the factory is listed." },
-            { icon: BadgeCheck, t: "Real listings only", d: "No placeholder companies or made-up reviews. What you see comes from real submissions." },
-            { icon: Scale, t: "Quotes side by side", d: "Price, lead time and minimum order in one place; the best price and fastest lead time are highlighted." },
+            { icon: ShieldCheck, t: t("trust.1t"), d: t("trust.1d") },
+            { icon: BadgeCheck, t: t("trust.2t"), d: t("trust.2d") },
+            { icon: Scale, t: t("trust.3t"), d: t("trust.3d") },
           ].map((b) => (
             <div key={b.t} className="flex gap-3">
               <b.icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" strokeWidth={1.6} />
@@ -103,7 +105,7 @@ function Home() {
 
       {/* Categories */}
       <section className="container-page py-20">
-        <SectionHead eyebrow="Categories" title="Browse by Category" />
+        <SectionHead eyebrow={t("home.catEyebrow")} title={t("home.catTitle")} />
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           {CATEGORIES.map((c) => {
             const active = category === c.slug;
@@ -133,15 +135,15 @@ function Home() {
       <section id="hubs" className="scroll-mt-20 border-y bg-subtle">
         <div className="container-page py-20">
           <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <SectionHead eyebrow="Sourcing hubs" title="Sourcing Hubs" className="mb-0" />
+            <SectionHead eyebrow={t("home.hubsEyebrow")} title={t("home.hubsTitle")} className="mb-0" />
             {filtering && (
               <div className="flex items-center gap-3 text-sm">
                 <span className="text-muted-foreground">
-                  {hubs.length} hubs
+                  {hubs.length} {t("home.hubsWord")}
                   {category && <> · {categoryName(category)}</>}
                   {query && <> · “{query}”</>}
                 </span>
-                <button onClick={() => { setQuery(""); setCategory(null); }} className="font-medium text-primary">Clear</button>
+                <button onClick={() => { setQuery(""); setCategory(null); }} className="font-medium text-primary">{t("home.clear")}</button>
               </div>
             )}
           </div>
@@ -151,8 +153,8 @@ function Home() {
             </div>
           ) : (
             <div className="rounded-xl border border-dashed bg-background py-12 text-center text-sm text-muted-foreground">
-              No hubs match your search.{" "}
-              <button onClick={() => { setQuery(""); setCategory(null); }} className="font-medium text-primary">Reset filters</button>
+              {t("home.noHubs")}{" "}
+              <button onClick={() => { setQuery(""); setCategory(null); }} className="font-medium text-primary">{t("home.reset")}</button>
             </div>
           )}
         </div>
@@ -160,12 +162,12 @@ function Home() {
 
       {/* How it works */}
       <section className="container-page py-20">
-        <SectionHead eyebrow="Process" title="How SOURCEX Works" />
+        <SectionHead eyebrow={t("home.procEyebrow")} title={t("home.procTitle")} />
         <div className="grid gap-px overflow-hidden rounded-xl border bg-border md:grid-cols-3">
           {[
-            { icon: FileText, t: "Post RFQ", d: "Describe your product, quantity, and target price in one structured request." },
-            { icon: MessagesSquare, t: "Get Quotes", d: "Suppliers in relevant hubs respond with comparable, itemized quotes." },
-            { icon: PackageCheck, t: "Source Smart", d: "Compare across countries on cost, lead time, and capability — then decide." },
+            { icon: FileText, t: t("home.step1t"), d: t("home.step1d") },
+            { icon: MessagesSquare, t: t("home.step2t"), d: t("home.step2d") },
+            { icon: PackageCheck, t: t("home.step3t"), d: t("home.step3d") },
           ].map((s, i) => (
             <div key={s.t} className="bg-background p-8">
               <div className="flex items-center justify-between">
@@ -178,15 +180,15 @@ function Home() {
           ))}
         </div>
         <div className="mt-8 flex justify-center gap-2">
-          <Button asChild><Link to="/rfq">Post an RFQ</Link></Button>
-          <Button variant="outline" onClick={() => navigate({ to: "/how-it-works" })}>Learn more</Button>
+          <Button asChild><Link to="/rfq">{t("home.postRfq")}</Link></Button>
+          <Button variant="outline" onClick={() => navigate({ to: "/how-it-works" })}>{t("home.learnMore")}</Button>
         </div>
       </section>
 
       {/* Featured suppliers */}
       <section className="container-page pb-24">
-        <SectionHead eyebrow="Featured suppliers" title="Featured Suppliers" />
-        <SuppliersEmpty note="Platform in private beta. Suppliers appear here only after verification." />
+        <SectionHead eyebrow={t("home.featEyebrow")} title={t("home.featTitle")} />
+        <SuppliersEmpty note={t("home.featNote")} />
       </section>
     </>
   );

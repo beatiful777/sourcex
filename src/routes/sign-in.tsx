@@ -4,6 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Logo } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
@@ -108,6 +109,7 @@ export const Route = createFileRoute("/sign-in")({
 });
 
 function SignIn() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"in" | "up">("in");
   const [busy, setBusy] = useState(false);
@@ -120,7 +122,7 @@ function SignIn() {
     const params = new URLSearchParams(window.location.search);
     const oauthError = params.get("error") || params.get("error_description");
     if (oauthError) {
-      toast.error("Google sign-in didn't complete", { description: "Please try again, or use email and password." });
+      toast.error(t("auth.googleFail1"), { description: t("auth.googleFail1Desc") });
       window.history.replaceState({}, "", "/sign-in");
     }
     supabase.auth.getSession().then(({ data }) => { if (data.session) navigate({ to: "/dashboard" }); });
@@ -135,8 +137,8 @@ function SignIn() {
     const f = new FormData(e.currentTarget);
     const email = String(f.get("email")).trim();
     const password = String(f.get("password"));
-    if (password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
-    if (TURNSTILE_KEY && !captchaToken) { toast.error("Please complete the CAPTCHA check"); return; }
+    if (password.length < 8) { toast.error(t("auth.errShort")); return; }
+    if (TURNSTILE_KEY && !captchaToken) { toast.error(t("auth.errCaptcha")); return; }
     const captcha = captchaToken ? { captchaToken } : {};
     setBusy(true);
     const { data, error } =
@@ -148,13 +150,13 @@ function SignIn() {
     if (TURNSTILE_KEY) setCaptchaReset((n) => n + 1);
     if (error) { toast.error(error.message); return; }
     // With "Confirm email" switched off in Supabase, signUp returns a session right away.
-    if (mode === "up" && !(data && "session" in data && data.session)) { toast.success("Check your email", { description: "Confirm your address to finish signing up." }); return; }
+    if (mode === "up" && !(data && "session" in data && data.session)) { toast.success(t("auth.checkEmail"), { description: t("auth.checkEmailDesc") }); return; }
     navigate({ to: "/dashboard" });
   }
 
   async function google() {
     const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}/sign-in` } });
-    if (error) toast.error("Google sign-in failed", { description: error.message });
+    if (error) toast.error(t("auth.googleFail2"), { description: error.message });
   }
 
   return (
@@ -165,25 +167,25 @@ function SignIn() {
           {(["in", "up"] as const).map((m) => (
             <button key={m} type="button" onClick={() => { setMode(m); setPw(""); }}
               className={`rounded-md py-1.5 font-medium transition-colors ${mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-              {m === "in" ? "Login" : "Register"}
+              {m === "in" ? t("auth.login") : t("auth.register")}
             </button>
           ))}
         </div>
-        <h1 className="mt-6 text-center text-xl font-semibold">{mode === "in" ? "Sign in" : "Create a buyer account"}</h1>
-        <p className="mt-1 text-center text-sm text-muted-foreground">Track your RFQs in one place.</p>
+        <h1 className="mt-6 text-center text-xl font-semibold">{mode === "in" ? t("auth.signIn") : t("auth.createBuyer")}</h1>
+        <p className="mt-1 text-center text-sm text-muted-foreground">{t("auth.tagline")}</p>
         {GOOGLE_ENABLED ? (
           <>
-            <Button variant="outline" className="mt-6 w-full" onClick={google}>Continue with Google</Button>
-            <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><div className="h-px flex-1 bg-border" />or<div className="h-px flex-1 bg-border" /></div>
+            <Button variant="outline" className="mt-6 w-full" onClick={google}>{t("auth.google")}</Button>
+            <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><div className="h-px flex-1 bg-border" />{t("auth.or")}<div className="h-px flex-1 bg-border" /></div>
           </>
         ) : (
           <div className="mt-6" />
         )}
         <form key={mode} onSubmit={onSubmit} autoComplete="off" className="grid gap-4">
-          <div className="grid gap-1.5"><Label htmlFor="email">Work email</Label><Input id="email" name="email" type="email" defaultValue="" autoComplete="off" placeholder="you@company.com" required /></div>
-          <div className="grid gap-1.5"><Label htmlFor="password">Password</Label><div className="relative">
+          <div className="grid gap-1.5"><Label htmlFor="email">{t("auth.email")}</Label><Input id="email" name="email" type="email" defaultValue="" autoComplete="off" placeholder="you@company.com" required /></div>
+          <div className="grid gap-1.5"><Label htmlFor="password">{t("auth.password")}</Label><div className="relative">
               <Input id="password" name="password" type={showPw ? "text" : "password"} defaultValue="" autoComplete={mode === "in" ? "current-password" : "new-password"} required minLength={8} onChange={(e) => setPw(e.target.value)} className="pr-10" />
-              <button type="button" onClick={() => setShowPw((v) => !v)} aria-label={showPw ? "Hide password" : "Show password"}
+              <button type="button" onClick={() => setShowPw((v) => !v)} aria-label={showPw ? t("auth.hide") : t("auth.show")}
                 className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground">
                 {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -194,23 +196,23 @@ function SignIn() {
                   <div className={`h-full transition-all ${STRENGTH[passwordStrength(pw)]!.bar}`} style={{ width: STRENGTH[passwordStrength(pw)]!.width }} />
                 </div>
                 <p className={`text-xs ${STRENGTH[passwordStrength(pw)]!.text}`}>
-                  {STRENGTH[passwordStrength(pw)]!.label}
-                  {passwordStrength(pw) < 3 ? " — use 12+ characters, upper & lower case, digits and symbols" : ""}
+                  {t(({ 1: "auth.weak", 2: "auth.medium", 3: "auth.strong" } as const)[passwordStrength(pw) as 1 | 2 | 3])}
+                  {passwordStrength(pw) < 3 ? ` — ${t("auth.hint")}` : ""}
                 </p>
               </div>
             )}
           </div>
-          {mode === "in" && <Link to="/reset-password" className="-mt-2 text-right text-xs text-primary">Forgot password?</Link>}
+          {mode === "in" && <Link to="/reset-password" className="-mt-2 text-right text-xs text-primary">{t("auth.forgot")}</Link>}
           {TURNSTILE_KEY && <TurnstileBox onToken={setCaptchaToken} resetKey={captchaReset} />}
-          <Button type="submit" disabled={busy || (!!TURNSTILE_KEY && !captchaToken)}>{mode === "in" ? "Sign in" : "Create account"}</Button>
+          <Button type="submit" disabled={busy || (!!TURNSTILE_KEY && !captchaToken)}>{mode === "in" ? t("auth.signIn") : t("auth.createAccount")}</Button>
         </form>
         {mode === "up" && (
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            By creating an account you agree to our <Link to="/terms" className="underline">Terms</Link> and <Link to="/privacy" className="underline">Privacy Policy</Link>.
+            {t("auth.agree1")} <Link to="/terms" className="underline">{t("auth.terms")}</Link> {t("auth.and")} <Link to="/privacy" className="underline">{t("auth.privacy")}</Link>{t("auth.agreeEnd")}
           </p>
         )}
         <button className="mt-4 w-full text-center text-sm text-primary" onClick={() => { setMode(mode === "in" ? "up" : "in"); setPw(""); }}>
-          {mode === "in" ? "New here? Create an account" : "Have an account? Sign in"}
+          {mode === "in" ? t("auth.newHere") : t("auth.haveAccount")}
         </button>
       </div>
     </div>

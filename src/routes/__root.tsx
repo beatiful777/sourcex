@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
+import { I18nProvider } from "@/lib/i18n";
 
 function NotFoundComponent() {
   return (
@@ -86,6 +87,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
+      <I18nProvider>
       <div className="flex min-h-screen flex-col">
         <div className="border-b bg-subtle px-4 py-1.5 text-center text-xs text-muted-foreground print:hidden">
           Working prototype in private beta.{" "}
@@ -98,6 +100,7 @@ function RootComponent() {
         <SiteFooter />
       </div>
       <Toaster />
+      </I18nProvider>
     </QueryClientProvider>
   );
 }
