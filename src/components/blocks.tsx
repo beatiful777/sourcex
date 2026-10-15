@@ -53,18 +53,6 @@ export function FoundingNetwork() {
   const { t } = useI18n();
   return (
     <div className="grid gap-4">
-      <div className="rounded-xl border bg-subtle p-6 md:p-8">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-primary" />
-          <p className="eyebrow">{t("bs.eyebrow")}</p>
-        </div>
-        <h2 className="mt-3 text-xl font-semibold tracking-tight md:text-2xl">
-          {t("bl.fH")}
-        </h2>
-        <p className="mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">
-          {t("bl.fP")}
-        </p>
-      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col rounded-xl border p-6">
           <div className="grid h-10 w-10 place-items-center rounded-full border bg-subtle">
