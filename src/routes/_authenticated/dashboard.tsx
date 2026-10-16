@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Copy, Mail } from "lucide-react";
+import { Check, Copy, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/blocks";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,9 @@ import { acceptQuoteFn } from "@/lib/notifications.functions";
 import { useI18n, fmt } from "@/lib/i18n";
 import { useNames } from "@/lib/names";
 import { useStatus } from "@/lib/status";
+import { cn } from "@/lib/utils";
+import { QuoteChatToggle } from "@/components/quote-chat";
+import { ReviewForm } from "@/components/reviews";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -144,6 +147,7 @@ function Dashboard() {
             <Button asChild size="sm" variant="outline"><Link to="/open-rfqs">{t("db.browseSup")}</Link></Button>
             <Button asChild size="sm" variant="outline"><Link to="/become-a-supplier">{t("bl.apply")}</Link></Button>
             <Button asChild size="sm" variant="outline"><Link to="/supplier/profile">{t("db.factoryProfile")}</Link></Button>
+            <Button asChild size="sm" variant="outline"><Link to="/favorites">{t("fv.link")}</Link></Button>
           </div>
           <Button variant="outline" size="sm" onClick={signOut}>{t("db.signOut")}</Button>
         </div>
@@ -209,6 +213,7 @@ function Dashboard() {
                         </Button>
                       </div>
                     </div>
+                    <RfqSteps quoteCount={r.rfq_applications.length} chosen={r.rfq_applications.some((a) => a.status === "accepted")} />
                     {r.rfq_applications.length === 0 ? (
                       <div className="border-t bg-muted/30 p-4 text-xs text-muted-foreground">
                         {t("db.live")}
@@ -259,6 +264,8 @@ function Dashboard() {
                                 <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => copyEmail(a.supplier_email)}><Copy className="mr-1 h-3 w-3" />{t("db.copyEmail")}</Button>
                                 <span className="ml-auto text-[10px] text-muted-foreground">{new Date(a.created_at).toLocaleDateString()}</span>
                               </div>
+                              <QuoteChatToggle applicationId={a.id} other={t("ch.factory")} />
+                              {a.status === "accepted" && <ReviewForm applicationId={a.id} />}
                             </div>
                           ))}
                         </div>
@@ -309,5 +316,34 @@ function Dashboard() {
         </Tabs>
       </div>
     </>
+  );
+}
+
+/** Three-step progress of a request: posted, quotes received, quote chosen. */
+function RfqSteps({ quoteCount, chosen }: { quoteCount: number; chosen: boolean }) {
+  const { t } = useI18n();
+  const steps = [
+    { label: t("pg.posted"), done: true },
+    { label: quoteCount > 0 ? `${t("pg.quotes")} (${quoteCount})` : t("pg.quotes"), done: quoteCount > 0 },
+    { label: t("pg.chosen"), done: chosen },
+  ];
+  const current = steps.findIndex((x) => !x.done);
+  return (
+    <ol aria-label={t("pg.aria")} className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 pb-3 text-xs">
+      {steps.map((x, i) => (
+        <li key={i} className="flex items-center gap-2">
+          <span
+            className={cn(
+              "grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[10px] font-semibold",
+              x.done ? "border-primary bg-primary text-primary-foreground" : i === current ? "border-primary text-primary" : "text-muted-foreground",
+            )}
+          >
+            {x.done ? <Check className="h-3 w-3" /> : i + 1}
+          </span>
+          <span className={x.done || i === current ? "font-medium text-foreground" : "text-muted-foreground"}>{x.label}</span>
+          {i < steps.length - 1 && <span className={cn("h-px w-5 sm:w-10", steps[i + 1]?.done ? "bg-primary" : "bg-border")} />}
+        </li>
+      ))}
+    </ol>
   );
 }

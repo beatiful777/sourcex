@@ -7,6 +7,7 @@ import { CATEGORIES, COUNTRIES } from "@/lib/catalog";
 import { PageHeader, FoundingNetwork } from "@/components/blocks";
 import { SampleRequestButton } from "@/components/sample-request-button";
 import { InquiryDialog } from "@/components/inquiry-dialog";
+import { FavoriteButton } from "@/components/favorite-button";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useI18n, fmt } from "@/lib/i18n";
@@ -16,7 +17,24 @@ const searchSchema = z.object({
   q: z.string().optional().catch(undefined),
   category: z.string().optional().catch(undefined),
   country: z.string().optional().catch(undefined),
+  sort: z.enum(["new", "moq", "name"]).optional().catch(undefined),
+  moq: z.enum(["100", "500", "1000", "5000", "10000"]).optional().catch(undefined),
 });
+
+const MOQ_STEPS = [100, 500, 1000, 5000, 10000];
+
+/** Reads the first number from free text such as "1,000 pcs", "500 units" or "2k". Returns null if there is none. */
+export function parseMoq(text: string | null): number | null {
+  if (!text) return null;
+  const m = text.match(/\d[\d\s.,]*/);
+  if (!m) return null;
+  const raw = m[0].trim().replace(/[.,]$/, "");
+  const after = text.slice((m.index ?? 0) + m[0].length);
+  const thousands = /^\d{1,3}([.,\s]\d{3})+$/.test(raw);
+  const n = thousands ? Number(raw.replace(/[.,\s]/g, "")) : Number(raw.replace(/\s/g, "").replace(",", "."));
+  if (!Number.isFinite(n)) return null;
+  return /^\s*k\b/i.test(after) ? n * 1000 : n;
+}
 
 export const Route = createFileRoute("/suppliers")({
   validateSearch: searchSchema,
@@ -48,7 +66,7 @@ type Factory = {
 export function Suppliers() {
   const { t } = useI18n();
   const names = useNames();
-  const { q = "", category, country } = Route.useSearch();
+  const { q = "", category, country, sort, moq } = Route.useSearch();
   const navigate = useNavigate({ from: "/suppliers" });
   const set = (patch: Partial<z.infer<typeof searchSchema>>) =>
     navigate({ search: (s) => ({ ...s, ...patch }), replace: true });
@@ -67,12 +85,24 @@ export function Suppliers() {
   });
 
   const approved = data ?? [];
-  const results = approved.filter(
-    (s) =>
-      (!q || s.company_name.toLowerCase().includes(q.toLowerCase())) &&
-      (!category || s.categories.includes(category)) &&
-      (!country || s.country === country),
-  );
+  const maxMoq = moq ? Number(moq) : null;
+  const moqOf = (f: Factory) => parseMoq(f.min_order_quantity);
+  const filtered = approved.filter((s) => {
+    if (q && !s.company_name.toLowerCase().includes(q.toLowerCase())) return false;
+    if (category && !s.categories.includes(category)) return false;
+    if (country && s.country !== country) return false;
+    if (maxMoq !== null) {
+      const m = moqOf(s);
+      if (m === null || m > maxMoq) return false;
+    }
+    return true;
+  });
+  const results = [...filtered].sort((a, b) => {
+    if (sort === "name") return a.company_name.localeCompare(b.company_name);
+    if (sort === "moq") return (moqOf(a) ?? Infinity) - (moqOf(b) ?? Infinity) || a.company_name.localeCompare(b.company_name);
+    return 0;
+  });
+  const filtersOn = !!(category || country || moq || sort);
 
   return (
     <>
@@ -107,6 +137,34 @@ export function Suppliers() {
                   {COUNTRIES.map((c) => <option key={c.slug} value={c.name}>{names.country(c.name)}</option>)}
                 </select>
               </div>
+              <div>
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("sp.moqMax")}</h3>
+                <select
+                  value={moq ?? ""}
+                  onChange={(e) => set({ moq: (e.target.value || undefined) as typeof moq })}
+                  className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                >
+                  <option value="">{t("sp.moqAny")}</option>
+                  {MOQ_STEPS.map((n) => <option key={n} value={String(n)}>{fmt(t("sp.moqUpTo"), { n: n.toLocaleString() })}</option>)}
+                </select>
+              </div>
+              <div>
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("sp.sort")}</h3>
+                <select
+                  value={sort ?? "new"}
+                  onChange={(e) => set({ sort: e.target.value === "new" ? undefined : (e.target.value as typeof sort) })}
+                  className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                >
+                  <option value="new">{t("sp.sortNew")}</option>
+                  <option value="moq">{t("sp.sortMoq")}</option>
+                  <option value="name">{t("sp.sortName")}</option>
+                </select>
+              </div>
+              {filtersOn && (
+                <Button variant="outline" size="sm" className="w-full" onClick={() => set({ category: undefined, country: undefined, moq: undefined, sort: undefined })}>
+                  {t("sp.reset")}
+                </Button>
+              )}
             </aside>
             <div>
               <div className="mb-6 flex items-center gap-2 rounded-lg border px-3">
@@ -121,6 +179,7 @@ export function Suppliers() {
               <p className="mb-4 text-sm text-muted-foreground">
                 {fmt(t("sp.count"), { n: results.length })}
               </p>
+              {moq && <p className="-mt-2 mb-4 text-xs text-muted-foreground">{t("sp.moqNote")}</p>}
               {results.length === 0 ? (
                 <p className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
                   {t("sp.none")}
@@ -136,9 +195,12 @@ export function Suppliers() {
                           )}
                           <Link to="/factory/$id" params={{ id: s.id }} className="break-words font-medium hover:underline">{s.company_name}</Link>
                         </div>
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/30 bg-accent px-2 py-0.5 text-xs text-accent-foreground">
-                          <ShieldCheck className="h-3 w-3" /> {t("c.verified")}
-                        </span>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <FavoriteButton supplierId={s.id} />
+                          <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-accent px-2 py-0.5 text-xs text-accent-foreground">
+                            <ShieldCheck className="h-3 w-3" /> {t("c.verified")}
+                          </span>
+                        </div>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {[s.city, s.country ? names.country(s.country) : null].filter(Boolean).join(", ") || t("sp.location")}

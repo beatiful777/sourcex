@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { FactorySamples } from "@/components/sample-lists";
 import { submitQuoteFn } from "@/lib/notifications.functions";
 import { RfqFiles } from "@/components/rfq-files";
+import { QuoteChatToggle } from "@/components/quote-chat";
 import { useI18n, fmt } from "@/lib/i18n";
 import { useNames } from "@/lib/names";
 import { useStatus } from "@/lib/status";
@@ -95,6 +96,7 @@ function Desk() {
                       {r.quote_id && (
                         <p className="mt-2 text-xs">{t("dk.yourQuote")} {r.unit_price || "—"} · {r.lead_time || "—"} · {t("dk.moq")} {r.min_order || "—"} · <b>{st(r.quote_status)}</b></p>
                       )}
+                      {r.quote_id && <div className="mt-3"><QuoteChatToggle applicationId={r.quote_id} other={t("ch.buyer")} /></div>}
                     </div>
                     {!accepted && (
                       <Button size="sm" variant={openId === r.id ? "outline" : "default"} onClick={() => setOpenId(openId === r.id ? null : r.id)}>

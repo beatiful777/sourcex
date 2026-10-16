@@ -6,6 +6,8 @@ import { InquiryDialog } from "@/components/inquiry-dialog";
 import { SampleRequestButton } from "@/components/sample-request-button";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
+import { FavoriteButton } from "@/components/favorite-button";
+import { SupplierReviews } from "@/components/reviews";
 import { useNames } from "@/lib/names";
 
 export const Route = createFileRoute("/factory/$id")({
@@ -94,6 +96,7 @@ function FactoryPage() {
             <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-accent px-2 py-0.5 text-xs text-accent-foreground">
               <ShieldCheck className="h-3 w-3" /> {t("c.verified")}
             </span>
+            <FavoriteButton supplierId={data.id} />
             {place && (
               <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {place}</span>
             )}
@@ -136,6 +139,8 @@ function FactoryPage() {
           </div>
         )}
       </section>
+
+      <SupplierReviews supplierId={data.id} />
 
       <div className="mt-10 flex flex-wrap gap-2 border-t pt-6">
         <Button asChild><Link to="/rfq">{t("ft.postRfq")}</Link></Button>
