@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { Key } from "@/lib/translations";
 
 const NAV = [
@@ -80,6 +81,7 @@ export function SiteHeader() {
         </div>
         <div className="flex items-center gap-1">
         <LanguageSwitcher />
+        <ThemeToggle />
         <div className="hidden items-center gap-2 md:flex">
           {signedIn ? (
             <>
