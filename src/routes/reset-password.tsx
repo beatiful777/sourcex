@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { TURNSTILE_KEY, TurnstileBox } from "@/components/turnstile-box";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -24,6 +25,8 @@ function ResetPassword() {
   const [recovery, setRecovery] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   useEffect(() => {
     if (/type=recovery/.test(window.location.hash)) setRecovery(true);
@@ -36,9 +39,15 @@ function ResetPassword() {
   async function requestLink(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const email = String(new FormData(e.currentTarget).get("email")).trim();
+    if (TURNSTILE_KEY && !captchaToken) { toast.error(t("auth.errCaptcha")); return; }
     setBusy(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+      ...(captchaToken ? { captchaToken } : {}),
+    });
     setBusy(false);
+    // A CAPTCHA token can be used only once
+    if (TURNSTILE_KEY) setCaptchaReset((n) => n + 1);
     if (error) { toast.error(error.message); return; }
     setSent(true);
   }
@@ -81,7 +90,8 @@ function ResetPassword() {
             <p className="mt-1 text-center text-sm text-muted-foreground">{t("rp.forgotD")}</p>
             <form onSubmit={requestLink} className="mt-6 grid gap-4">
               <div className="grid gap-1.5"><Label htmlFor="email">{t("rp.email")}</Label><Input id="email" name="email" type="email" placeholder="you@company.com" required /></div>
-              <Button type="submit" disabled={busy}>{t("rp.send")}</Button>
+              {TURNSTILE_KEY && <TurnstileBox onToken={setCaptchaToken} resetKey={captchaReset} />}
+              <Button type="submit" disabled={busy || (!!TURNSTILE_KEY && !captchaToken)}>{t("rp.send")}</Button>
             </form>
           </>
         )}
