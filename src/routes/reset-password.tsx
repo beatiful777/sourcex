@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Logo } from "@/components/site-header";
@@ -8,6 +9,24 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { TURNSTILE_KEY, TurnstileBox } from "@/components/turnstile-box";
+
+function PasswordInput({ id, name }: { id: string; name: string }) {
+  const { t } = useI18n();
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <Input id={id} name={name} type={show ? "text" : "password"} autoComplete="new-password" required minLength={8} className="pr-10" />
+      <button
+        type="button"
+        onClick={() => setShow((v) => !v)}
+        aria-label={show ? t("auth.hide") : t("auth.show")}
+        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground"
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -74,8 +93,8 @@ function ResetPassword() {
           <>
             <h1 className="mt-6 text-center text-xl font-semibold">{t("rp.newTitle")}</h1>
             <form onSubmit={setNewPassword} autoComplete="off" className="mt-6 grid gap-4">
-              <div className="grid gap-1.5"><Label htmlFor="password">{t("rp.new")}</Label><Input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} /></div>
-              <div className="grid gap-1.5"><Label htmlFor="confirm">{t("rp.repeat")}</Label><Input id="confirm" name="confirm" type="password" autoComplete="new-password" required minLength={8} /></div>
+              <div className="grid gap-1.5"><Label htmlFor="password">{t("rp.new")}</Label><PasswordInput id="password" name="password" /></div>
+              <div className="grid gap-1.5"><Label htmlFor="confirm">{t("rp.repeat")}</Label><PasswordInput id="confirm" name="confirm" /></div>
               <Button type="submit" disabled={busy}>{t("rp.save")}</Button>
             </form>
           </>
